@@ -14,3 +14,7 @@ programming language.
 This repository uses gitAds.
 
 <!-- GitAds-Verify: IWPAZYU5JHSCATYH24AJGVGNA38C6ZMD -->
+
+## GitAds Sponsored
+
+[![Sponsored by GitAds](https://gitads.dev/v1/ad-serve?source=admodev/oak@github)](https://gitads.dev/v1/ad-track?source=admodev/oak@github)
