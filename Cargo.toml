@@ -1,0 +1,26 @@
+[package]
+name = "oak"
+version = "0.1.0"
+edition = "2024"
+description = "Math oriented programming language."
+authors = ["Adolfo Moyano <admodevcodes@outlook.com>"]
+license = "MIT"
+readme = "README.md"
+keywords = ["language", "parser", "math"]
+categories = ["command-line-utilities"]
+repository = "https://github.com/admodev/oak"
+
+[dependencies]
+regex = "1.10"
+lazy_static = "1.4"
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "3.0"
+
+[[bin]]
+name = "oak"
+path = "src/bin/oak.rs"
+
+[lib]
+path = "src/lib.rs"
