@@ -1,6 +1,7 @@
 use std::env;
 use std::process;
 
+use oak::parser::parse_script;
 use oak::runtime::run;
 
 fn main() {
@@ -22,6 +23,8 @@ fn main() {
         }
         "-d" => {
             debug_mode = true;
+            // Testing...
+            parse_script("./test.oak".to_string());
         }
         _ => {}
     }

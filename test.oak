@@ -1,0 +1,6 @@
+BEGIN PROJ "test.project"
+    BEGIN SECTION "main"
+        var result := "Hello, World!"
+        ret print result
+    END SECTION "main"
+END PROJ "test.project"

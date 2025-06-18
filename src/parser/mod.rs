@@ -1,3 +1,5 @@
+use std::{fs::File, io::Read, io::Result};
+
 // Permits nodes to return values from function output
 #[derive(Debug, PartialEq)]
 pub enum Value {
@@ -164,4 +166,28 @@ pub trait Visitor {
     fn visit_string_literal(&mut self, node: &StringLiteral) -> Value;
     fn visit_function_call(&mut self, node: &FunctionCall) -> Value;
     fn visit_comment(&mut self, node: &Comment) -> Value;
+}
+
+pub fn parse_script(source: String) -> Result<()> {
+    let mut file = File::open(source)?;
+    let mut content = String::new();
+    let mut in_section: &str = "";
+    let mut sections: Vec<&str> = Vec::new();
+
+    file.read_to_string(&mut content)?;
+
+    let tokens: Vec<&str> = content.split_whitespace().collect();
+
+    for token in tokens {
+        token.split(" ");
+
+        if token.starts_with("BEGIN PROJ") {
+            in_section = "project";
+            sections.push("project");
+        }
+
+        println!("{}", token);
+    }
+
+    Ok(())
 }
