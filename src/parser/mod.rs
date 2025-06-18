@@ -1,4 +1,6 @@
-use std::{fs::File, io::Read, io::Result};
+use regex::{Error as RegexError, Regex};
+use std::{fs::File, io::Read, result::Result};
+use thiserror::Error;
 
 // Permits nodes to return values from function output
 #[derive(Debug, PartialEq)]
@@ -6,6 +8,15 @@ pub enum Value {
     Number(f64),
     String(String),
     None,
+}
+
+// Errors specific to the Oak language
+#[derive(Error, Debug)]
+pub enum ScriptError {
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("Regex error: {0}")]
+    Regex(#[from] RegexError),
 }
 
 pub trait Node {
@@ -168,25 +179,31 @@ pub trait Visitor {
     fn visit_comment(&mut self, node: &Comment) -> Value;
 }
 
-pub fn parse_script(source: String) -> Result<()> {
+pub fn parse_script(source: String) -> Result<(), ScriptError> {
     let mut file = File::open(source)?;
     let mut content = String::new();
-    let mut in_section: &str = "";
-    let mut sections: Vec<&str> = Vec::new();
-
     file.read_to_string(&mut content)?;
 
+    let mut sections: Vec<&str> = Vec::new();
+    let mut in_section = String::new();
+    let mut project_name = String::new();
+
+    // The tokens vector stores all the words of each section of the .oak script to tokenize them
     let tokens: Vec<&str> = content.split_whitespace().collect();
+    let project_regex = Regex::new(r#""([^"]+)\.project""#)?;
 
-    for token in tokens {
-        token.split(" ");
-
-        if token.starts_with("BEGIN PROJ") {
-            in_section = "project";
+    // Parses sections
+    for line in content.lines() {
+        if line.contains("BEGIN") && line.contains(".project") {
+            in_section = "project".to_string();
             sections.push("project");
-        }
 
-        println!("{}", token);
+            if let Some(captures) = project_regex.captures(line) {
+                if let Some(project_name_match) = captures.get(1) {
+                    project_name = project_name_match.as_str().to_string();
+                }
+            }
+        }
     }
 
     Ok(())

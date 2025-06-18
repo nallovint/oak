@@ -23,3 +23,18 @@ fn test_binary_operation() {
 
     assert_eq!(result, Value::Number(7.0));
 }
+
+#[test]
+fn test_runtime_script_parsing() {
+    use crate::parser::parse_script;
+
+    let script_source: String = "./test.oak".to_string();
+
+    if let Err(_) = parse_script(script_source) {
+        println!("Failed to assert the result of file parsing was ok!");
+        std::process::exit(1);
+    } else {
+        println!("File parsing result was ok!");
+        std::process::exit(0);
+    }
+}

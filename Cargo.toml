@@ -13,6 +13,7 @@ repository = "https://github.com/admodev/oak"
 [dependencies]
 regex = "1.10"
 lazy_static = "1.4"
+thiserror = "2.0.12"
 
 [dev-dependencies]
 assert_cmd = "2.0"

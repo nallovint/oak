@@ -23,8 +23,6 @@ fn main() {
         }
         "-d" => {
             debug_mode = true;
-            // Testing...
-            parse_script("./test.oak".to_string());
         }
         _ => {}
     }
