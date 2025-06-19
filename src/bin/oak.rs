@@ -3,7 +3,7 @@ extern crate regex;
 use std::env;
 use std::process;
 
-use oak::parser::parse_script;
+use oak::repl::start_repl;
 use oak::runtime::run;
 use regex::Regex;
 
@@ -29,6 +29,10 @@ fn main() {
         "-d" => {
             debug_mode = true;
         }
+        "-r" => {
+            start_repl();
+        }
+        // If no flags are passed to the binary, it will run the script passed to the cli
         argument_string => {
             if script_argument_re.is_match(argument_string) {
                 let executed_script = run(argument_string.to_string());
