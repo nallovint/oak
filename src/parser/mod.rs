@@ -191,9 +191,12 @@ pub fn parse_script(source: String) -> Result<(), ScriptError> {
     // The tokens vector stores all the words of each section of the .oak script to tokenize them
     let tokens: Vec<&str> = content.split_whitespace().collect();
     let project_regex = Regex::new(r#""([^"]+)\.project""#)?;
+    let section_full_regex =
+        Regex::new(r#"(?s)BEGIN SECTION "([^"]+)"\s*(.*?)\s*END SECTION "([^"]+)""#)?;
 
     // Parses sections
     for line in content.lines() {
+        in_section = "".to_string();
         if line.contains("BEGIN") && line.contains(".project") {
             in_section = "project".to_string();
             sections.push("project");
@@ -201,6 +204,25 @@ pub fn parse_script(source: String) -> Result<(), ScriptError> {
             if let Some(captures) = project_regex.captures(line) {
                 if let Some(project_name_match) = captures.get(1) {
                     project_name = project_name_match.as_str().to_string();
+                }
+            }
+        }
+
+        for caps in section_full_regex.captures_iter(&content) {
+            if let Some(section_name_match) = caps.get(1) {
+                let section_name = section_name_match.as_str();
+                // The values printed here are for debugging purposes.
+                // After the development stage they will be removed or moved to a "debug-mode" section.
+                println!("\n--- Found Section: '{}' ---", section_name);
+
+                if let Some(section_content_match) = caps.get(2) {
+                    let section_content = section_content_match.as_str().trim();
+                    println!("Section Content:\n{}", section_content);
+
+                    let section_tokens: Vec<&str> = section_content.split_whitespace().collect();
+                    println!("Section Tokens: {:?}", section_tokens);
+                } else {
+                    println!("Warning: No content found for section '{}'", section_name);
                 }
             }
         }

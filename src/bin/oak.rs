@@ -1,8 +1,11 @@
+extern crate regex;
+
 use std::env;
 use std::process;
 
 use oak::parser::parse_script;
 use oak::runtime::run;
+use regex::Regex;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -16,6 +19,8 @@ fn main() {
         process::exit(1);
     }
 
+    let script_argument_re = Regex::new(r"\.oak$").unwrap();
+
     match args[1].as_str() {
         "-h" => {
             call_for_help();
@@ -24,13 +29,23 @@ fn main() {
         "-d" => {
             debug_mode = true;
         }
-        _ => {}
+        argument_string => {
+            if script_argument_re.is_match(argument_string) {
+                let executed_script = run(argument_string.to_string());
+
+                if executed_script.is_err() {
+                    println!("FATAL ERROR while trying to run script. Exiting.");
+                    process::exit(1);
+                } else {
+                    process::exit(0);
+                }
+            }
+        }
     }
 
     let result = if debug_mode {
         println!("Implement this function...");
     } else {
-        run();
         call_for_help();
         println!("Implement rest of the code...");
     };
