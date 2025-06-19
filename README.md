@@ -6,7 +6,7 @@
 
 ### How to use it?
 
-Read each file inside the `oak/docs` folder to start working with the oak
+Read each file inside the `docs` folder to start working with the oak
 programming language.
 
 ### Ads
