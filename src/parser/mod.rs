@@ -1,3 +1,4 @@
+// Parser + AST Definitions
 use crate::tokenizer::Token;
 use regex::Error as RegexError;
 use std::{fs::File, io::Read, result::Result};

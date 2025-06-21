@@ -1,4 +1,6 @@
-use std::io::{self, BufRead};
+// REPL (Read-Eval-Print Loop)
+
+use std::io::{self};
 
 pub fn start_repl() {
     let stdin = io::stdin();

@@ -1,3 +1,4 @@
+// Script Runner
 use crate::parser::{ScriptError, parse_script};
 
 pub fn run(source: String) -> Result<(), ScriptError> {
