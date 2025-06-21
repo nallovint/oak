@@ -1,8 +1,8 @@
-use regex::{Error as RegexError, Regex};
+use crate::tokenizer::Token;
+use regex::Error as RegexError;
 use std::{fs::File, io::Read, result::Result};
 use thiserror::Error;
 
-// Permits nodes to return values from function output
 #[derive(Debug, PartialEq)]
 pub enum Value {
     Number(f64),
@@ -10,7 +10,6 @@ pub enum Value {
     None,
 }
 
-// Errors specific to the Oak language
 #[derive(Error, Debug)]
 pub enum ScriptError {
     #[error("IO error: {0}")]
@@ -23,7 +22,6 @@ pub trait Node {
     fn accept(&self, visitor: &mut dyn Visitor) -> Value;
 }
 
-// Evaluates math expressions in code
 pub(crate) struct EvalMathExp {
     pub expr: String,
 }
@@ -42,7 +40,6 @@ impl Node for EvalMathExp {
     }
 }
 
-// Parses binary operations
 pub(crate) struct BinOp {
     pub left: Box<dyn Node>,
     pub op: String,
@@ -61,7 +58,6 @@ impl Node for BinOp {
     }
 }
 
-// Evaluates and parse numerical types
 pub(crate) struct Number {
     pub value: f64,
 }
@@ -80,7 +76,6 @@ impl Node for Number {
     }
 }
 
-// Parses variables
 pub(crate) struct Var {
     pub name: String,
 }
@@ -97,7 +92,6 @@ impl Node for Var {
     }
 }
 
-// Evaluates variables and functions assignation
 pub(crate) struct Assign {
     pub name: String,
     pub expr: Box<dyn Node>,
@@ -115,7 +109,6 @@ impl Node for Assign {
     }
 }
 
-// Parses strings
 pub(crate) struct StringLiteral {
     pub value: String,
 }
@@ -132,7 +125,6 @@ impl Node for StringLiteral {
     }
 }
 
-// Parses function calls
 pub(crate) struct FunctionCall {
     pub name: String,
     pub args: Vec<Box<dyn Node>>,
@@ -150,7 +142,6 @@ impl Node for FunctionCall {
     }
 }
 
-// Non-evaluative comment parsing
 pub(crate) struct Comment {
     pub value: String,
 }
@@ -167,7 +158,6 @@ impl Node for Comment {
     }
 }
 
-// Visitor trait pattern for each node
 pub trait Visitor {
     fn visit_eval_math_exp(&mut self, node: &EvalMathExp) -> Value;
     fn visit_bin_op(&mut self, node: &BinOp) -> Value;
@@ -180,50 +170,16 @@ pub trait Visitor {
 }
 
 pub fn parse_script(source: String) -> Result<(), ScriptError> {
+    use crate::tokenizer::tokenize;
+
     let mut file = File::open(source)?;
     let mut content = String::new();
     file.read_to_string(&mut content)?;
 
-    let mut project_name = String::new();
+    let tokens = tokenize(&content);
 
-    let project_regex = Regex::new(r#""([^"]+)\.project""#)?;
-    let section_full_regex =
-        Regex::new(r#"(?s)BEGIN SECTION "([^"]+)"\s*(.*?)\s*END SECTION "([^"]+)""#)?;
-
-    if let Some(captures) = project_regex.captures(&content) {
-        if let Some(project_name_match) = captures.get(1) {
-            project_name = project_name_match.as_str().to_string();
-            println!("Project Name: {}", project_name);
-        }
-    }
-
-    for caps in section_full_regex.captures_iter(&content) {
-        let section_name = caps.get(1).map(|m| m.as_str()).unwrap_or("");
-        let end_name = caps.get(3).map(|m| m.as_str()).unwrap_or("");
-        if section_name != end_name {
-            println!(
-                "Section name mismatch: BEGIN '{}' vs END '{}'",
-                section_name, end_name
-            );
-            continue;
-        }
-
-        println!("\n--- Found Section: '{}' ---", section_name);
-
-        let section_content = caps.get(2).map(|m| m.as_str().trim()).unwrap_or("");
-        let section_tokens: Vec<&str> = section_content.split_whitespace().collect();
-
-        for token_index in 0..section_tokens.len().saturating_sub(3) {
-            if section_tokens[token_index] == "var" && section_tokens[token_index + 2] == ":=" {
-                let name = section_tokens[token_index + 1];
-                let value = section_tokens[token_index + 3];
-
-                let expr_node = Box::new(StringLiteral::parse(value.to_string())) as Box<dyn Node>;
-                let assign_node = Assign::parse(name.to_string(), expr_node);
-
-                println!("Parsed Assign Node: var {} := {:?}", name, value);
-            }
-        }
+    for token in tokens {
+        println!("Parsed token: {:?}", token);
     }
 
     Ok(())
