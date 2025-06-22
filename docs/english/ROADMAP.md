@@ -14,6 +14,10 @@
 
 ...
 
+### Upgrades
+
+- [x] Replace tokenizer regex logic with FSM (Finite State Machine) approach
+
 ### Desired Features
 
 ...
