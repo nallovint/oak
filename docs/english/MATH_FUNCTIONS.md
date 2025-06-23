@@ -16,6 +16,8 @@ Oak provides a comprehensive set of mathematical functions for scientific and en
 ### Other Mathematical Functions
 - `sqrt(x)` - Square root of x
 - `abs(x)` - Absolute value of x
+- `to_radians(degrees)` - Converts degrees to radians
+- `to_degrees(radians)` - Converts radians to degrees
 
 ## Mathematical Constants
 
@@ -69,6 +71,34 @@ BEGIN PROJ "combined_example.project"
         print log_result  // Output: 2.0
     END SECTION "main"
 END PROJ "combined_example.project"
+```
+
+### Angle Conversion Examples
+```oak
+BEGIN PROJ "angle_conversion.project"
+    BEGIN SECTION "main"
+        // Convert degrees to radians
+        var degrees := 90
+        var radians := to_radians(degrees)
+        print radians  // Output: 1.5707963267948966
+        
+        // Convert radians to degrees
+        var rad_value := PI / 4
+        var deg_value := to_degrees(rad_value)
+        print deg_value  // Output: 45.0
+        
+        // Using conversion with trigonometric functions
+        var angle_deg := 30
+        var angle_rad := to_radians(angle_deg)
+        var sine_30 := sin(angle_rad)
+        print sine_30  // Output: 0.5
+        
+        // Full circle conversion
+        var full_circle_deg := 360
+        var full_circle_rad := to_radians(full_circle_deg)
+        print full_circle_rad  // Output: 6.283185307179586 (2π)
+    END SECTION "main"
+END PROJ "angle_conversion.project"
 ```
 
 ## Error Handling
