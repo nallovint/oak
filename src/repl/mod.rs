@@ -8,7 +8,10 @@ pub fn start_repl() {
 
     loop {
         input.clear();
-        stdin.read_line(input);
+        if let Err(e) = stdin.read_line(input) {
+            eprintln!("Error reading input: {}", e);
+            continue;
+        }
 
         if input.trim() == "exit" {
             std::process::exit(0);

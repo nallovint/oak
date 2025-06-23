@@ -1,5 +1,4 @@
 // Parser + AST Definitions
-use crate::tokenizer::Token;
 use regex::Error as RegexError;
 use std::{fs::File, io::Read, result::Result};
 use thiserror::Error;
@@ -23,11 +22,12 @@ pub trait Node {
     fn accept(&self, visitor: &mut dyn Visitor) -> Value;
 }
 
-pub(crate) struct EvalMathExp {
+pub struct EvalMathExp {
     pub expr: String,
 }
 
 impl EvalMathExp {
+    #[allow(dead_code)]
     pub fn parse(expr_tokens: Vec<&str>) -> Self {
         Self {
             expr: expr_tokens.join(" "),
@@ -41,13 +41,14 @@ impl Node for EvalMathExp {
     }
 }
 
-pub(crate) struct BinOp {
+pub struct BinOp {
     pub left: Box<dyn Node>,
     pub op: String,
     pub right: Box<dyn Node>,
 }
 
 impl BinOp {
+    #[allow(dead_code)]
     pub fn parse(left: Box<dyn Node>, op: String, right: Box<dyn Node>) -> Self {
         Self { left, op, right }
     }
@@ -59,11 +60,12 @@ impl Node for BinOp {
     }
 }
 
-pub(crate) struct Number {
+pub struct Number {
     pub value: f64,
 }
 
 impl Number {
+    #[allow(dead_code)]
     pub fn parse(value: &str) -> Self {
         Self {
             value: value.parse().unwrap(),
@@ -77,11 +79,12 @@ impl Node for Number {
     }
 }
 
-pub(crate) struct Var {
+pub struct Var {
     pub name: String,
 }
 
 impl Var {
+    #[allow(dead_code)]
     pub fn parse(name: String) -> Self {
         Self { name }
     }
@@ -93,12 +96,13 @@ impl Node for Var {
     }
 }
 
-pub(crate) struct Assign {
+pub struct Assign {
     pub name: String,
     pub expr: Box<dyn Node>,
 }
 
 impl Assign {
+    #[allow(dead_code)]
     pub fn parse(name: String, expr: Box<dyn Node>) -> Self {
         Self { name, expr }
     }
@@ -110,11 +114,12 @@ impl Node for Assign {
     }
 }
 
-pub(crate) struct StringLiteral {
+pub struct StringLiteral {
     pub value: String,
 }
 
 impl StringLiteral {
+    #[allow(dead_code)]
     pub fn parse(value: String) -> Self {
         Self { value }
     }
@@ -126,12 +131,13 @@ impl Node for StringLiteral {
     }
 }
 
-pub(crate) struct FunctionCall {
+pub struct FunctionCall {
     pub name: String,
     pub args: Vec<Box<dyn Node>>,
 }
 
 impl FunctionCall {
+    #[allow(dead_code)]
     pub fn parse(name: String, args: Vec<Box<dyn Node>>) -> Self {
         Self { name, args }
     }
@@ -143,11 +149,12 @@ impl Node for FunctionCall {
     }
 }
 
-pub(crate) struct Comment {
+pub struct Comment {
     pub value: String,
 }
 
 impl Comment {
+    #[allow(dead_code)]
     pub fn parse(value: String) -> Self {
         Self { value }
     }
