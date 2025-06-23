@@ -4,15 +4,20 @@ use std::collections::HashMap;
 use super::parser::{
     Assign, BinOp, Comment, EvalMathExp, FunctionCall, Number, StringLiteral, Value, Var, Visitor,
 };
+use super::math::{get_math_functions, get_math_constants};
 
 pub struct Interpreter {
     variables: HashMap<String, f64>,
+    math_functions: HashMap<String, fn(f64) -> f64>,
+    math_constants: HashMap<String, f64>,
 }
 
 impl Interpreter {
     pub fn new() -> Self {
         Self {
             variables: HashMap::new(),
+            math_functions: get_math_functions(),
+            math_constants: get_math_constants(),
         }
     }
 }
@@ -50,6 +55,13 @@ impl Visitor for Interpreter {
     }
 
     fn visit_var(&mut self, node: &Var) -> Value {
+        // First check if it's a math constant
+        if let Some(&constant_value) = self.math_constants.get(&node.name) {
+            println!("Constante matemática '{}' = {}", node.name, constant_value);
+            return Value::Number(constant_value);
+        }
+        
+        // Then check if it's a variable
         match self.variables.get(&node.name) {
             Some(val) => {
                 println!("Variable '{}' = {}", node.name, val);
@@ -85,6 +97,26 @@ impl Visitor for Interpreter {
             node.name,
             node.args.len()
         );
+        
+        // Check if it's a math function
+        if let Some(&math_func) = self.math_functions.get(&node.name) {
+            if node.args.len() != 1 {
+                println!("Error: función '{}' requiere exactamente 1 argumento", node.name);
+                return Value::None;
+            }
+            
+            let arg = node.args[0].accept(self);
+            if let Value::Number(x) = arg {
+                let result = math_func(x);
+                println!("Resultado de {}: {}", node.name, result);
+                return Value::Number(result);
+            } else {
+                println!("Error: argumento de '{}' debe ser un número", node.name);
+                return Value::None;
+            }
+        }
+        
+        // Handle other function calls (existing logic)
         for arg in &node.args {
             arg.accept(self);
         }
