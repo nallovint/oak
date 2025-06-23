@@ -16,6 +16,8 @@ Oak provides a comprehensive set of mathematical functions for scientific and en
 ### Other Mathematical Functions
 - `sqrt(x)` - Square root of x
 - `abs(x)` - Absolute value of x
+- `to_radians(x)` - Convert degrees to radians
+- `to_degrees(x)` - Convert radians to degrees
 
 ## Mathematical Constants
 
@@ -37,6 +39,13 @@ BEGIN PROJ "math_example.project"
         
         var abs_value := abs(-5)
         print abs_value  // Output: 5.0
+        
+        var degrees := 90
+        var radians := to_radians(degrees)
+        print radians  // Output: 1.5707963267948966
+        
+        var back_to_degrees := to_degrees(radians)
+        print back_to_degrees  // Output: 90.0
     END SECTION "main"
 END PROJ "math_example.project"
 ```

@@ -67,6 +67,85 @@ fn test_math_functions() {
 }
 
 #[test]
+fn test_math_functions_error_handling() {
+    use crate::{
+        interpreter::Interpreter,
+        parser::{FunctionCall, Node, Number, Value},
+    };
+
+    let mut interpreter = Interpreter::new();
+
+    // Test sqrt with negative input - should return NaN
+    let sqrt_negative = FunctionCall::parse(
+        "sqrt".to_string(),
+        vec![Box::new(Number::parse("-1"))],
+    );
+    let result = sqrt_negative.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => assert!(val.is_nan()),
+        _ => panic!("sqrt(-1) should return NaN"),
+    }
+
+    // Test log with zero - should return NaN
+    let log_zero = FunctionCall::parse(
+        "log".to_string(),
+        vec![Box::new(Number::parse("0"))],
+    );
+    let result = log_zero.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => assert!(val.is_nan()),
+        _ => panic!("log(0) should return NaN"),
+    }
+
+    // Test log with negative input - should return NaN
+    let log_negative = FunctionCall::parse(
+        "log".to_string(),
+        vec![Box::new(Number::parse("-1"))],
+    );
+    let result = log_negative.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => assert!(val.is_nan()),
+        _ => panic!("log(-1) should return NaN"),
+    }
+}
+
+#[test]
+fn test_angle_conversion_functions() {
+    use crate::{
+        interpreter::Interpreter,
+        parser::{FunctionCall, Node, Number, Value},
+    };
+
+    let mut interpreter = Interpreter::new();
+
+    // Test to_radians function
+    let to_radians_call = FunctionCall::parse(
+        "to_radians".to_string(),
+        vec![Box::new(Number::parse("180"))],
+    );
+    let result = to_radians_call.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => {
+            assert!((val - std::f64::consts::PI).abs() < 1e-10);
+        }
+        _ => panic!("to_radians(180) should return PI"),
+    }
+
+    // Test to_degrees function
+    let to_degrees_call = FunctionCall::parse(
+        "to_degrees".to_string(),
+        vec![Box::new(Number::parse(&std::f64::consts::PI.to_string()))],
+    );
+    let result = to_degrees_call.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => {
+            assert!((val - 180.0).abs() < 1e-10);
+        }
+        _ => panic!("to_degrees(PI) should return 180"),
+    }
+}
+
+#[test]
 fn test_math_constants() {
     use crate::{
         interpreter::Interpreter,

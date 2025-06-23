@@ -80,6 +80,8 @@ pub fn get_math_functions() -> std::collections::HashMap<String, fn(f64) -> f64>
     functions.insert("log".to_string(), MathModule::log as fn(f64) -> f64);
     functions.insert("exp".to_string(), MathModule::exp as fn(f64) -> f64);
     functions.insert("abs".to_string(), MathModule::abs as fn(f64) -> f64);
+    functions.insert("to_radians".to_string(), MathModule::to_radians as fn(f64) -> f64);
+    functions.insert("to_degrees".to_string(), MathModule::to_degrees as fn(f64) -> f64);
     
     functions
 }
