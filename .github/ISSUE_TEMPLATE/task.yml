@@ -1,0 +1,118 @@
+name: Task
+description: Create a scoped task for contributors to develop a feature or fix a bug in the language
+title: "[Task] <short-description>"
+labels: ["task", "triage"]
+assignees: ["someone"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🛠️ Task Overview
+
+        Please fill out the details below to define a clear, scoped task for contributors.
+
+  - type: input
+    id: scope
+    attributes:
+      label: 📌 Scope
+      description: What is the purpose of this task? What feature or issue does it address?
+      placeholder: e.g. Implement string interpolation in parser
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 🧠 Context
+      description: Add any relevant background, dependencies, or explanation for why this task exists.
+      placeholder: e.g. This task is part of expanding language features to support modern syntax.
+    validations:
+      required: false
+
+  - type: textarea
+    id: requirements
+    attributes:
+      label: 📎 Requirements
+      description: List what needs to be done to complete this task (code, tests, documentation, etc.).
+      placeholder: |
+        - Follow architecture in `parser/mod.rs`
+        - Add unit tests in `tests/parser_tests.rs`
+        - Update AST node types if necessary
+        - Document new syntax in `README.dev.md`
+    validations:
+      required: true
+
+  - type: textarea
+    id: dev_instructions
+    attributes:
+      label: 🧪 Development & Testing Instructions
+      description: Add steps on how to build, test and run this feature locally.
+      placeholder: |
+        1. git checkout -b feature/<short-task-name>
+        2. cargo build
+        3. cargo test
+        4. Run example: ./target/debug/<lang-binary> ./examples/example.oak
+    validations:
+      required: false
+
+  - type: textarea
+    id: feedback
+    attributes:
+      label: 🔁 Feedback & Review
+      description: How should contributors request feedback during the task?
+      placeholder: |
+        - Open a draft PR early
+        - Mention @maintainers for review
+        - Use PR comments to discuss questions
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 📤 Submission Checklist
+      options:
+        - label: Code builds without errors
+        - label: All tests pass
+        - label: Code follows project structure and style
+        - label: Includes documentation if applicable
+        - label: PR description links this issue (e.g. "Closes #123")
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🧭 Priority
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: 🧱 Difficulty
+      options:
+        - Easy
+        - Medium
+        - Hard
+    validations:
+      required: true
+
+  - type: input
+    id: time_estimate
+    attributes:
+      label: ⏱️ Estimated Time
+      placeholder: e.g. ~2h, ~1 day, >2 days
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 🔗 Related Issues / Docs
+      description: Add links to related issues, RFCs, files, or documentation.
+      placeholder: e.g. #42, /docs/spec.md, parser.rs:line 120
+    validations:
+      required: false
