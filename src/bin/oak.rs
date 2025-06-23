@@ -48,18 +48,16 @@ fn main() {
         }
     }
 
-    let result = if debug_mode {
+    if debug_mode {
         println!("Implement this function...");
     } else {
         call_for_help();
         println!("Implement rest of the code...");
     };
-
-    println!("Result: {:?}", result);
 }
 
 fn call_for_help() {
-    println!("");
+    println!();
     println!("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠖⠒⠢⣄⣀⡀⣀⣀⠀⡠⠔⠒⠒⢤⡀⠀⠀⠀⠀⠀⠀Oak Programming Language");
     println!("⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡴⡇⠀⠀⠀⠁⠠⡋⠀⠀⠙⠦⠀⠀⠀⠀⣧⠤⣀⠀⠀⠀⠀");
     println!("⠀⠀⠀⠀⠀⠀⠀⡠⠖⠊⠑⠲⣄⣀⣠⠖⠘⠛⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⢸⠇⠀⠀⠀");
@@ -78,7 +76,7 @@ fn call_for_help() {
     println!("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡼⠁⠀⠀⠀⠀⠈⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀");
     println!("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡴⠒⢋⣁⡀⠀⠀⠀⠀⠀⠘⠢⢄⣀⠀⠀⠀⠀⠀⠀⠀⠀");
     println!("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠉⠉⠁⠉⠙⠒⠤⣘⣗⠒⠒⠒⠚⠛⠃⠀⠀⠀⠀⠀⠀");
-    println!("");
+    println!();
     println!("Usage: oak <script.oak> or oak -h for help");
     println!("Available flags: -h (help) -d (debug) -c (compile) -r (REPL)");
 }

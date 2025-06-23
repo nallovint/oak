@@ -28,7 +28,7 @@ fn test_binary_operation() {
 fn test_math_functions() {
     use crate::{
         interpreter::Interpreter,
-        parser::{Assign, FunctionCall, Node, Number, Value, Var},
+        parser::{FunctionCall, Node, Number, Value},
     };
 
     let mut interpreter = Interpreter::new();

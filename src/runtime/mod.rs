@@ -6,5 +6,5 @@ pub fn run(source: String) -> Result<(), ScriptError> {
 
     let parsed_script: Result<(), ScriptError> = parse_script(source);
 
-    return parsed_script;
+    parsed_script
 }

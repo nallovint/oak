@@ -12,6 +12,12 @@ pub struct Interpreter {
     math_constants: HashMap<String, f64>,
 }
 
+impl Default for Interpreter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Interpreter {
     pub fn new() -> Self {
         Self {
