@@ -8,7 +8,7 @@ pub fn start_repl() {
 
     loop {
         input.clear();
-        stdin.read_line(input);
+        let _ = stdin.read_line(input);
 
         if input.trim() == "exit" {
             std::process::exit(0);

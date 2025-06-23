@@ -1,5 +1,4 @@
 // Parser + AST Definitions
-use crate::tokenizer::Token;
 use regex::Error as RegexError;
 use std::{fs::File, io::Read, result::Result};
 use thiserror::Error;
@@ -23,7 +22,7 @@ pub trait Node {
     fn accept(&self, visitor: &mut dyn Visitor) -> Value;
 }
 
-pub(crate) struct EvalMathExp {
+pub struct EvalMathExp {
     pub expr: String,
 }
 
@@ -41,7 +40,7 @@ impl Node for EvalMathExp {
     }
 }
 
-pub(crate) struct BinOp {
+pub struct BinOp {
     pub left: Box<dyn Node>,
     pub op: String,
     pub right: Box<dyn Node>,
@@ -59,7 +58,7 @@ impl Node for BinOp {
     }
 }
 
-pub(crate) struct Number {
+pub struct Number {
     pub value: f64,
 }
 
@@ -77,7 +76,7 @@ impl Node for Number {
     }
 }
 
-pub(crate) struct Var {
+pub struct Var {
     pub name: String,
 }
 
@@ -93,7 +92,7 @@ impl Node for Var {
     }
 }
 
-pub(crate) struct Assign {
+pub struct Assign {
     pub name: String,
     pub expr: Box<dyn Node>,
 }
@@ -110,7 +109,7 @@ impl Node for Assign {
     }
 }
 
-pub(crate) struct StringLiteral {
+pub struct StringLiteral {
     pub value: String,
 }
 
@@ -126,7 +125,7 @@ impl Node for StringLiteral {
     }
 }
 
-pub(crate) struct FunctionCall {
+pub struct FunctionCall {
     pub name: String,
     pub args: Vec<Box<dyn Node>>,
 }
@@ -143,7 +142,7 @@ impl Node for FunctionCall {
     }
 }
 
-pub(crate) struct Comment {
+pub struct Comment {
     pub value: String,
 }
 
