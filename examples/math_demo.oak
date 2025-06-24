@@ -1,0 +1,45 @@
+BEGIN PROJ "math_demo.project"
+    BEGIN SECTION "demo"
+        print "=== Oak Math Functions Demo ==="
+        print ""
+        
+        print "1. Basic Math Functions:"
+        print "sqrt(16) = " + sqrt(16)
+        print "abs(-42) = " + abs(-42)
+        print ""
+        
+        print "2. Trigonometric Functions:"
+        print "sin(0) = " + sin(0)
+        print "cos(0) = " + cos(0)
+        print "tan(0) = " + tan(0)
+        print "sin(PI/2) = " + sin(PI/2)
+        print ""
+        
+        print "3. Logarithmic and Exponential:"
+        print "log(1) = " + log(1)
+        print "exp(1) = " + exp(1)
+        print "log(exp(2)) = " + log(exp(2))
+        print ""
+        
+        print "4. Mathematical Constants:"
+        print "PI = " + PI
+        print "E = " + E
+        print ""
+        
+        print "5. Combined Operations:"
+        var x := 3
+        var y := 4
+        var hypotenuse := sqrt(x * x + y * y)
+        print "For triangle with sides " + x + " and " + y + ":"
+        print "Hypotenuse = " + hypotenuse
+        
+        var angle := 0.785398  // π/4 radians (45 degrees)
+        print "sin(π/4) = " + sin(angle)
+        print "cos(π/4) = " + cos(angle)
+        print ""
+        
+        print "=== Demo Complete ==="
+        
+        ret "Math functions working perfectly!"
+    END SECTION "demo"
+END PROJ "math_demo.project" 
