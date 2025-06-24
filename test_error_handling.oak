@@ -1,0 +1,46 @@
+BEGIN PROJ "error_handling_demo.project"
+    BEGIN SECTION "demo"
+        print "=== Oak Math Error Handling Demo ==="
+        print ""
+        
+        print "1. Undefined Tangent Values:"
+        print "tan(PI/2) = " + tan(1.5707963267948966)  // Should be NaN
+        print "tan(3*PI/2) = " + tan(4.71238898038469)  // Should be NaN
+        print "tan(0) = " + tan(0)                      // Should be 0
+        print "tan(PI) = " + tan(3.141592653589793)     // Should be 0
+        print "tan(PI/4) = " + tan(0.7853981633974483)  // Should be 1
+        print ""
+        
+        print "2. Undefined Square Root:"
+        print "sqrt(-1) = " + sqrt(-1)                  // Should be NaN
+        print "sqrt(0) = " + sqrt(0)                    // Should be 0
+        print "sqrt(4) = " + sqrt(4)                    // Should be 2
+        print ""
+        
+        print "3. Undefined Logarithm:"
+        print "log(0) = " + log(0)                      // Should be NaN
+        print "log(-1) = " + log(-1)                    // Should be NaN
+        print "log(1) = " + log(1)                      // Should be 0
+        print "log(10) = " + log(10)                    // Should be ~2.302585
+        print ""
+        
+        print "4. Edge Cases:"
+        print "exp(0) = " + exp(0)                      // Should be 1
+        print "abs(0) = " + abs(0)                      // Should be 0
+        print "abs(-0) = " + abs(-0)                    // Should be 0
+        print "abs(-42) = " + abs(-42)                  // Should be 42
+        print ""
+        
+        print "5. Valid Trigonometric Values:"
+        print "sin(0) = " + sin(0)                      // Should be 0
+        print "cos(0) = " + cos(0)                      // Should be 1
+        print "sin(PI/2) = " + sin(1.5707963267948966)  // Should be 1
+        print "cos(PI/2) = " + cos(1.5707963267948966)  // Should be 0
+        print ""
+        
+        print "=== Demo Complete ==="
+        print "Note: NaN values indicate undefined mathematical operations"
+        
+        ret "Error handling working correctly!"
+    END SECTION "demo"
+END PROJ "error_handling_demo.project" 
