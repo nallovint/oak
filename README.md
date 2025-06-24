@@ -18,3 +18,9 @@ This repository uses gitAds.
 ## GitAds Sponsored
 
 [![Sponsored by GitAds](https://gitads.dev/v1/ad-serve?source=admodev/oak@github)](https://gitads.dev/v1/ad-track?source=admodev/oak@github)
+
+### Featured Contributors
+
+Early and consistent contributors are listed here (thanks for the support 🫶):
+
+- @nallovint
