@@ -214,3 +214,166 @@ fn test_runtime_script_parsing() {
         std::process::exit(0);
     }
 }
+
+#[test]
+fn test_math_functions_error_handling() {
+    use crate::{
+        interpreter::Interpreter,
+        parser::{FunctionCall, Node, Number, Value},
+    };
+
+    let mut interpreter = Interpreter::new();
+
+    // Test sqrt with negative input - should return NaN
+    let sqrt_negative = FunctionCall::parse(
+        "sqrt".to_string(),
+        vec![Box::new(Number::parse("-1"))],
+    );
+    let result = sqrt_negative.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => assert!(val.is_nan()),
+        _ => panic!("sqrt(-1) should return NaN"),
+    }
+
+    // Test log with zero - should return NaN
+    let log_zero = FunctionCall::parse(
+        "log".to_string(),
+        vec![Box::new(Number::parse("0"))],
+    );
+    let result = log_zero.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => assert!(val.is_nan()),
+        _ => panic!("log(0) should return NaN"),
+    }
+
+    // Test log with negative input - should return NaN
+    let log_negative = FunctionCall::parse(
+        "log".to_string(),
+        vec![Box::new(Number::parse("-1"))],
+    );
+    let result = log_negative.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => assert!(val.is_nan()),
+        _ => panic!("log(-1) should return NaN"),
+    }
+
+    // Test tan(PI/2) - should return NaN (undefined)
+    let tan_pi_over_2 = FunctionCall::parse(
+        "tan".to_string(),
+        vec![Box::new(Number::parse("1.5707963267948966"))], // PI/2
+    );
+    let result = tan_pi_over_2.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => assert!(val.is_nan(), "tan(PI/2) should return NaN, got {}", val),
+        _ => panic!("tan(PI/2) should return NaN"),
+    }
+
+    // Test tan(3*PI/2) - should return NaN (undefined)
+    let tan_3pi_over_2 = FunctionCall::parse(
+        "tan".to_string(),
+        vec![Box::new(Number::parse("4.71238898038469"))], // 3*PI/2
+    );
+    let result = tan_3pi_over_2.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => assert!(val.is_nan(), "tan(3*PI/2) should return NaN, got {}", val),
+        _ => panic!("tan(3*PI/2) should return NaN"),
+    }
+
+    // Test tan(0) - should return 0 (defined)
+    let tan_zero = FunctionCall::parse(
+        "tan".to_string(),
+        vec![Box::new(Number::parse("0"))],
+    );
+    let result = tan_zero.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => assert!((val - 0.0).abs() < 1e-10, "tan(0) should return 0, got {}", val),
+        _ => panic!("tan(0) should return 0"),
+    }
+
+    // Test tan(PI) - should return 0 (defined)
+    let tan_pi = FunctionCall::parse(
+        "tan".to_string(),
+        vec![Box::new(Number::parse("3.141592653589793"))], // PI
+    );
+    let result = tan_pi.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => assert!((val - 0.0).abs() < 1e-10, "tan(PI) should return 0, got {}", val),
+        _ => panic!("tan(PI) should return 0"),
+    }
+
+    // Test tan(PI/4) - should return 1 (defined)
+    let tan_pi_over_4 = FunctionCall::parse(
+        "tan".to_string(),
+        vec![Box::new(Number::parse("0.7853981633974483"))], // PI/4
+    );
+    let result = tan_pi_over_4.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => assert!((val - 1.0).abs() < 1e-10, "tan(PI/4) should return 1, got {}", val),
+        _ => panic!("tan(PI/4) should return 1"),
+    }
+}
+
+#[test]
+fn test_math_functions_edge_cases() {
+    use crate::{
+        interpreter::Interpreter,
+        parser::{FunctionCall, Node, Number, Value},
+    };
+
+    let mut interpreter = Interpreter::new();
+
+    // Test sqrt(0) - should return 0
+    let sqrt_zero = FunctionCall::parse(
+        "sqrt".to_string(),
+        vec![Box::new(Number::parse("0"))],
+    );
+    let result = sqrt_zero.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => assert!((val - 0.0).abs() < 1e-10, "sqrt(0) should return 0, got {}", val),
+        _ => panic!("sqrt(0) should return 0"),
+    }
+
+    // Test log(1) - should return 0
+    let log_one = FunctionCall::parse(
+        "log".to_string(),
+        vec![Box::new(Number::parse("1"))],
+    );
+    let result = log_one.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => assert!((val - 0.0).abs() < 1e-10, "log(1) should return 0, got {}", val),
+        _ => panic!("log(1) should return 0"),
+    }
+
+    // Test exp(0) - should return 1
+    let exp_zero = FunctionCall::parse(
+        "exp".to_string(),
+        vec![Box::new(Number::parse("0"))],
+    );
+    let result = exp_zero.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => assert!((val - 1.0).abs() < 1e-10, "exp(0) should return 1, got {}", val),
+        _ => panic!("exp(0) should return 1"),
+    }
+
+    // Test abs(0) - should return 0
+    let abs_zero = FunctionCall::parse(
+        "abs".to_string(),
+        vec![Box::new(Number::parse("0"))],
+    );
+    let result = abs_zero.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => assert!((val - 0.0).abs() < 1e-10, "abs(0) should return 0, got {}", val),
+        _ => panic!("abs(0) should return 0"),
+    }
+
+    // Test abs(-0) - should return 0
+    let abs_negative_zero = FunctionCall::parse(
+        "abs".to_string(),
+        vec![Box::new(Number::parse("-0"))],
+    );
+    let result = abs_negative_zero.accept(&mut interpreter);
+    match result {
+        Value::Number(val) => assert!((val - 0.0).abs() < 1e-10, "abs(-0) should return 0, got {}", val),
+        _ => panic!("abs(-0) should return 0"),
+    }
+}
