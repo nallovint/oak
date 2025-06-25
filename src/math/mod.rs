@@ -6,21 +6,32 @@ pub struct MathModule;
 
 impl MathModule {
     /// Calculate the sine of an angle in radians
+    /// Always defined for all real numbers
     pub fn sin(x: f64) -> f64 {
         x.sin()
     }
 
     /// Calculate the cosine of an angle in radians
+    /// Always defined for all real numbers
     pub fn cos(x: f64) -> f64 {
         x.cos()
     }
 
     /// Calculate the tangent of an angle in radians
+    /// Returns NaN for undefined values (e.g., tan(PI/2), tan(3*PI/2))
     pub fn tan(x: f64) -> f64 {
-        x.tan()
+        // Check for undefined tangent values (where cos(x) = 0)
+        // These occur at PI/2 + n*PI for any integer n
+        let cos_val = x.cos();
+        if cos_val.abs() < f64::EPSILON {
+            f64::NAN
+        } else {
+            x.tan()
+        }
     }
 
     /// Calculate the square root of a number
+    /// Returns NaN for negative numbers
     pub fn sqrt(x: f64) -> f64 {
         if x < 0.0 {
             f64::NAN
@@ -30,6 +41,7 @@ impl MathModule {
     }
 
     /// Calculate the natural logarithm of a number
+    /// Returns NaN for non-positive numbers
     pub fn log(x: f64) -> f64 {
         if x <= 0.0 {
             f64::NAN
@@ -39,21 +51,25 @@ impl MathModule {
     }
 
     /// Calculate e raised to the power of x
+    /// Always defined for all real numbers
     pub fn exp(x: f64) -> f64 {
         x.exp()
     }
 
     /// Calculate the absolute value of a number
+    /// Always defined for all real numbers
     pub fn abs(x: f64) -> f64 {
         x.abs()
     }
 
     /// Convert degrees to radians
+    /// Always defined for all real numbers
     pub fn to_radians(degrees: f64) -> f64 {
         degrees * PI / 180.0
     }
 
     /// Convert radians to degrees
+    /// Always defined for all real numbers
     pub fn to_degrees(radians: f64) -> f64 {
         radians * 180.0 / PI
     }
@@ -66,6 +82,21 @@ impl MathModule {
     /// Get the value of e
     pub fn e() -> f64 {
         std::f64::consts::E
+    }
+
+    /// Check if a value is NaN (Not a Number)
+    pub fn is_nan(x: f64) -> bool {
+        x.is_nan()
+    }
+
+    /// Check if a value is infinite
+    pub fn is_infinite(x: f64) -> bool {
+        x.is_infinite()
+    }
+
+    /// Check if a value is finite (not NaN and not infinite)
+    pub fn is_finite(x: f64) -> bool {
+        x.is_finite()
     }
 }
 
