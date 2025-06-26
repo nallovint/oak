@@ -699,7 +699,7 @@ fn test_building_stability_zero_overturning_moment() {
     // Test with zero wind load (should result in perfect stability: ratio = 1e6)
     let result = MathModule::verify_building_stability(
         5.0,    // dead_load_per_sqm (kN/m²)
-        0.00000000001, // wind_load_per_sqm (kN/m²) - near zero
+        1e-20,  // wind_load_per_sqm (kN/m²) - extremely small to ensure overturning moment < f64::EPSILON
         20.0,   // building_length_a (m)
         15.0,   // building_width_b (m)
         30.0,   // building_height (m)

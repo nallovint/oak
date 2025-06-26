@@ -112,6 +112,119 @@ impl MathModule {
         x.is_finite()
     }
 
+    // Helper functions for building stability calculations
+
+    /// Validate building dimension parameters
+    /// 
+    /// # Arguments
+    /// * `building_length_a` - Length of windward face (m)
+    /// * `building_width_b` - Width perpendicular to wind (m)
+    /// * `building_height` - Total height of building (m)
+    /// * `num_floors` - Number of floors (integer)
+    /// 
+    /// # Returns
+    /// * `Ok(())` if all parameters are valid
+    /// * `Err(String)` with error message if validation fails
+    fn validate_building_parameters(
+        building_length_a: f64,
+        building_width_b: f64,
+        building_height: f64,
+        num_floors: u32,
+    ) -> Result<(), String> {
+        if building_length_a <= 0.0 {
+            return Err("Building length must be positive".to_string());
+        }
+        if building_width_b <= 0.0 {
+            return Err("Building width must be positive".to_string());
+        }
+        if building_height <= 0.0 {
+            return Err("Building height must be positive".to_string());
+        }
+        if num_floors == 0 {
+            return Err("Number of floors must be at least 1".to_string());
+        }
+
+        // Check for extremely small buildings that might cause numerical issues
+        if building_length_a < 0.1 || building_width_b < 0.1 {
+            return Err("Building dimensions must be at least 0.1 meters".to_string());
+        }
+
+        // Check for extremely large values that might cause overflow
+        if building_length_a > 10000.0 || building_width_b > 10000.0 || building_height > 10000.0 {
+            return Err("Building dimensions exceed maximum allowed values (10,000 m)".to_string());
+        }
+
+        Ok(())
+    }
+
+    /// Validate wind-related parameters
+    /// 
+    /// # Arguments
+    /// * `wind_load_per_sqm` - Wind load per square meter (kN/m²)
+    /// * `wind_force_height` - Height where wind force acts (m)
+    /// * `building_height` - Total height of building (m)
+    /// 
+    /// # Returns
+    /// * `Ok(())` if all parameters are valid
+    /// * `Err(String)` with error message if validation fails
+    fn validate_wind_parameters(
+        wind_load_per_sqm: f64,
+        wind_force_height: f64,
+        building_height: f64,
+    ) -> Result<(), String> {
+        if wind_load_per_sqm <= 0.0 {
+            return Err("Wind load per square meter must be positive".to_string());
+        }
+        if wind_force_height <= 0.0 || wind_force_height > building_height {
+            return Err("Wind force height must be positive and not exceed building height".to_string());
+        }
+        Ok(())
+    }
+
+    /// Validate calculation result for overflow or NaN
+    /// 
+    /// # Arguments
+    /// * `value` - The calculated value to validate
+    /// * `calculation_name` - Name of the calculation for error messages
+    /// 
+    /// # Returns
+    /// * `Ok(())` if the value is valid
+    /// * `Err(String)` with error message if validation fails
+    fn validate_calculation_result(value: f64, calculation_name: &str) -> Result<(), String> {
+        if value.is_infinite() || value.is_nan() {
+            return Err(format!("{} resulted in invalid value (overflow or NaN)", calculation_name));
+        }
+        Ok(())
+    }
+
+    /// Calculate center to corner distance (diagonal distance from center to corner)
+    /// 
+    /// # Arguments
+    /// * `building_length_a` - Length of windward face (m)
+    /// * `building_width_b` - Width perpendicular to wind (m)
+    /// 
+    /// # Returns
+    /// * `Ok(f64)` - The center to corner distance
+    /// * `Err(String)` with error message if calculation fails
+    fn calculate_center_to_corner_distance(
+        building_length_a: f64,
+        building_width_b: f64,
+    ) -> Result<f64, String> {
+        let center_to_corner_distance = MathModule::sqrt(
+            (building_length_a / 2.0).powi(2) + (building_width_b / 2.0).powi(2)
+        );
+
+        // Check for invalid center to corner distance
+        MathModule::validate_calculation_result(center_to_corner_distance, "Center to corner distance calculation")?;
+
+        // Check for division by zero
+        if center_to_corner_distance == 0.0 {
+            return Err("Center to corner distance cannot be zero".to_string());
+        }
+
+        Ok(center_to_corner_distance)
+    }
+
     /// Verify building stability against overturning due to wind loads
     /// 
     /// # Arguments
@@ -157,77 +270,27 @@ impl MathModule {
         if dead_load_per_sqm <= 0.0 {
             return Err("Dead load per square meter must be positive".to_string());
         }
-        if wind_load_per_sqm <= 0.0 {
-            return Err("Wind load per square meter must be positive".to_string());
-        }
-        if building_length_a <= 0.0 {
-            return Err("Building length must be positive".to_string());
-        }
-        if building_width_b <= 0.0 {
-            return Err("Building width must be positive".to_string());
-        }
-        if building_height <= 0.0 {
-            return Err("Building height must be positive".to_string());
-        }
-        if num_floors == 0 {
-            return Err("Number of floors must be at least 1".to_string());
-        }
-        if wind_force_height <= 0.0 || wind_force_height > building_height {
-            return Err("Wind force height must be positive and not exceed building height".to_string());
-        }
-
-        // Check for extremely small buildings that might cause numerical issues
-        if building_length_a < 0.1 || building_width_b < 0.1 {
-            return Err("Building dimensions must be at least 0.1 meters".to_string());
-        }
-
-        // Check for extremely large values that might cause overflow
-        if building_length_a > 10000.0 || building_width_b > 10000.0 || building_height > 10000.0 {
-            return Err("Building dimensions exceed maximum allowed values (10,000 m)".to_string());
-        }
+        MathModule::validate_building_parameters(building_length_a, building_width_b, building_height, num_floors)?;
+        MathModule::validate_wind_parameters(wind_load_per_sqm, wind_force_height, building_height)?;
 
         // Calculate total dead load G
         let total_dead_load = dead_load_per_sqm * building_length_a * building_width_b * num_floors as f64;
-
-        // Check for overflow in dead load calculation
-        if total_dead_load.is_infinite() || total_dead_load.is_nan() {
-            return Err("Dead load calculation resulted in invalid value (overflow or NaN)".to_string());
-        }
+        MathModule::validate_calculation_result(total_dead_load, "Dead load calculation")?;
 
         // Calculate distance from center of gravity to furthest corner (da)
-        // This is the diagonal distance from center to corner
-        let center_to_corner_distance = MathModule::sqrt(
-            (building_length_a / 2.0).powi(2) + (building_width_b / 2.0).powi(2)
-        );
-
-        // Check for invalid center to corner distance
-        if center_to_corner_distance.is_nan() || center_to_corner_distance.is_infinite() {
-            return Err("Center to corner distance calculation resulted in invalid value".to_string());
-        }
+        let center_to_corner_distance = MathModule::calculate_center_to_corner_distance(building_length_a, building_width_b)?;
 
         // Calculate resisting moment Me = G * da
         let resisting_moment = total_dead_load * center_to_corner_distance;
-
-        // Check for overflow in resisting moment calculation
-        if resisting_moment.is_infinite() || resisting_moment.is_nan() {
-            return Err("Resisting moment calculation resulted in invalid value (overflow or NaN)".to_string());
-        }
+        MathModule::validate_calculation_result(resisting_moment, "Resisting moment calculation")?;
 
         // Calculate wind force W = qw * h * a
         let wind_force = wind_load_per_sqm * building_height * building_length_a;
-
-        // Check for overflow in wind force calculation
-        if wind_force.is_infinite() || wind_force.is_nan() {
-            return Err("Wind force calculation resulted in invalid value (overflow or NaN)".to_string());
-        }
+        MathModule::validate_calculation_result(wind_force, "Wind force calculation")?;
 
         // Calculate overturning moment Mv = W * d
         let overturning_moment = wind_force * wind_force_height;
-
-        // Check for overflow in overturning moment calculation
-        if overturning_moment.is_infinite() || overturning_moment.is_nan() {
-            return Err("Overturning moment calculation resulted in invalid value (overflow or NaN)".to_string());
-        }
+        MathModule::validate_calculation_result(overturning_moment, "Overturning moment calculation")?;
 
         // Calculate stability ratio with division by zero and negative protection
         let stability_ratio = if overturning_moment > f64::EPSILON {
@@ -249,9 +312,7 @@ impl MathModule {
         let safety_margin = stability_ratio - 3.0;
 
         // Final validation of result values
-        if safety_margin.is_infinite() || safety_margin.is_nan() {
-            return Err("Safety margin calculation resulted in invalid value".to_string());
-        }
+        MathModule::validate_calculation_result(safety_margin, "Safety margin calculation")?;
 
         Ok(StabilityResult {
             resisting_moment,
@@ -285,78 +346,30 @@ impl MathModule {
         safety_factor: f64,
     ) -> Result<f64, String> {
         // Validate input parameters
-        if wind_load_per_sqm <= 0.0 {
-            return Err("Wind load per square meter must be positive".to_string());
-        }
-        if building_length_a <= 0.0 || building_width_b <= 0.0 || building_height <= 0.0 {
-            return Err("Building dimensions must be positive".to_string());
-        }
-        if num_floors == 0 {
-            return Err("Number of floors must be at least 1".to_string());
-        }
-        if wind_force_height <= 0.0 || wind_force_height > building_height {
-            return Err("Wind force height must be positive and not exceed building height".to_string());
-        }
+        MathModule::validate_building_parameters(building_length_a, building_width_b, building_height, num_floors)?;
+        MathModule::validate_wind_parameters(wind_load_per_sqm, wind_force_height, building_height)?;
         if safety_factor <= 0.0 {
             return Err("Safety factor must be positive".to_string());
         }
 
-        // Check for extremely small buildings that might cause numerical issues
-        if building_length_a < 0.1 || building_width_b < 0.1 {
-            return Err("Building dimensions must be at least 0.1 meters".to_string());
-        }
-
-        // Check for extremely large values that might cause overflow
-        if building_length_a > 10000.0 || building_width_b > 10000.0 || building_height > 10000.0 {
-            return Err("Building dimensions exceed maximum allowed values (10,000 m)".to_string());
-        }
-
         // Calculate wind force
         let wind_force = wind_load_per_sqm * building_height * building_length_a;
-        
-        // Check for overflow in wind force calculation
-        if wind_force.is_infinite() || wind_force.is_nan() {
-            return Err("Wind force calculation resulted in invalid value (overflow or NaN)".to_string());
-        }
+        MathModule::validate_calculation_result(wind_force, "Wind force calculation")?;
         
         // Calculate overturning moment
         let overturning_moment = wind_force * wind_force_height;
-        
-        // Check for overflow in overturning moment calculation
-        if overturning_moment.is_infinite() || overturning_moment.is_nan() {
-            return Err("Overturning moment calculation resulted in invalid value (overflow or NaN)".to_string());
-        }
+        MathModule::validate_calculation_result(overturning_moment, "Overturning moment calculation")?;
         
         // Calculate center to corner distance
-        let center_to_corner_distance = MathModule::sqrt(
-            (building_length_a / 2.0).powi(2) + (building_width_b / 2.0).powi(2)
-        );
-        
-        // Check for invalid center to corner distance
-        if center_to_corner_distance.is_nan() || center_to_corner_distance.is_infinite() {
-            return Err("Center to corner distance calculation resulted in invalid value".to_string());
-        }
-        
-        // Check for division by zero
-        if center_to_corner_distance == 0.0 {
-            return Err("Center to corner distance cannot be zero".to_string());
-        }
+        let center_to_corner_distance = MathModule::calculate_center_to_corner_distance(building_length_a, building_width_b)?;
         
         // Calculate required resisting moment
         let required_resisting_moment = overturning_moment * safety_factor;
-        
-        // Check for overflow in required resisting moment calculation
-        if required_resisting_moment.is_infinite() || required_resisting_moment.is_nan() {
-            return Err("Required resisting moment calculation resulted in invalid value (overflow or NaN)".to_string());
-        }
+        MathModule::validate_calculation_result(required_resisting_moment, "Required resisting moment calculation")?;
         
         // Calculate required total dead load
         let required_total_dead_load = required_resisting_moment / center_to_corner_distance;
-        
-        // Check for overflow in required total dead load calculation
-        if required_total_dead_load.is_infinite() || required_total_dead_load.is_nan() {
-            return Err("Required total dead load calculation resulted in invalid value (overflow or NaN)".to_string());
-        }
+        MathModule::validate_calculation_result(required_total_dead_load, "Required total dead load calculation")?;
         
         // Calculate building area
         let building_area = building_length_a * building_width_b * num_floors as f64;
@@ -370,9 +383,7 @@ impl MathModule {
         let required_dead_load_per_sqm = required_total_dead_load / building_area;
         
         // Final validation of result
-        if required_dead_load_per_sqm.is_infinite() || required_dead_load_per_sqm.is_nan() {
-            return Err("Required dead load per square meter calculation resulted in invalid value (overflow or NaN)".to_string());
-        }
+        MathModule::validate_calculation_result(required_dead_load_per_sqm, "Required dead load per square meter calculation")?;
         
         Ok(required_dead_load_per_sqm)
     }
