@@ -5,6 +5,9 @@ use std::f64::consts::PI;
 pub struct MathModule;
 
 /// Building stability verification result
+///
+/// - If `overturning_moment` is near zero, `stability_ratio` will be 1e6 ("perfect stability").
+/// - If `overturning_moment` is negative, the function returns an error.
 #[derive(Debug, Clone)]
 pub struct StabilityResult {
     pub resisting_moment: f64,
@@ -117,22 +120,37 @@ impl MathModule {
     /// * `building_length_a` - Length of windward face (m)
     /// * `building_width_b` - Width perpendicular to wind (m)
     /// * `building_height` - Total height of building (m)
-    /// * `num_floors` - Number of floors
+    /// * `num_floors` - Number of floors (integer)
     /// * `wind_force_height` - Height where wind force acts (m), typically h/2
     /// 
     /// # Returns
     /// * `StabilityResult` with detailed calculation results
-    /// 
+    ///
+    /// # Special Cases
+    /// * If overturning moment is near zero (abs < f64::EPSILON), returns a stability ratio of 1e6 ("perfect stability").
+    /// * If overturning moment is negative, returns an error (physically impossible).
+    ///
     /// # Safety Criterion
-    /// The building is considered stable if Me/Mv > 3
+    /// The building is considered stable if Me/Mv >= 3
     /// where Me is the resisting moment and Mv is the overturning moment
+    ///
+    /// # Example
+    /// ```rust
+    /// use oak::MathModule;
+    /// let result = MathModule::verify_building_stability(
+    ///     5.0, 1.0, 20.0, 15.0, 30.0, 10, 15.0
+    /// );
+    /// assert!(result.is_ok());
+    /// let stability = result.unwrap();
+    /// assert!(stability.is_stable);
+    /// ```
     pub fn verify_building_stability(
         dead_load_per_sqm: f64,
         wind_load_per_sqm: f64,
         building_length_a: f64,
         building_width_b: f64,
         building_height: f64,
-        num_floors: f64,
+        num_floors: u32,
         wind_force_height: f64,
     ) -> Result<StabilityResult, String> {
         // Validate input parameters
@@ -151,8 +169,8 @@ impl MathModule {
         if building_height <= 0.0 {
             return Err("Building height must be positive".to_string());
         }
-        if num_floors <= 0.0 {
-            return Err("Number of floors must be positive".to_string());
+        if num_floors == 0 {
+            return Err("Number of floors must be at least 1".to_string());
         }
         if wind_force_height <= 0.0 || wind_force_height > building_height {
             return Err("Wind force height must be positive and not exceed building height".to_string());
@@ -169,7 +187,7 @@ impl MathModule {
         }
 
         // Calculate total dead load G
-        let total_dead_load = dead_load_per_sqm * building_length_a * building_width_b * num_floors;
+        let total_dead_load = dead_load_per_sqm * building_length_a * building_width_b * num_floors as f64;
 
         // Check for overflow in dead load calculation
         if total_dead_load.is_infinite() || total_dead_load.is_nan() {
@@ -211,19 +229,23 @@ impl MathModule {
             return Err("Overturning moment calculation resulted in invalid value (overflow or NaN)".to_string());
         }
 
-        // Calculate stability ratio with division by zero protection
-        let stability_ratio = if overturning_moment > 0.0 {
+        // Calculate stability ratio with division by zero and negative protection
+        let stability_ratio = if overturning_moment > f64::EPSILON {
             let ratio = resisting_moment / overturning_moment;
             if ratio.is_infinite() || ratio.is_nan() {
                 return Err("Stability ratio calculation resulted in invalid value".to_string());
             }
             ratio
+        } else if overturning_moment.abs() < f64::EPSILON {
+            // Special case: no overturning moment means perfect stability
+            // Use a large finite value to indicate this
+            1e6
         } else {
-            f64::INFINITY // If no overturning moment, building is infinitely stable
+            return Err("Negative overturning moment is physically impossible".to_string());
         };
 
-        // Check stability criterion (Me/Mv > 3)
-        let is_stable = stability_ratio > 3.0;
+        // Check stability criterion (Me/Mv >= 3)
+        let is_stable = stability_ratio >= 3.0;
         let safety_margin = stability_ratio - 3.0;
 
         // Final validation of result values
@@ -247,7 +269,7 @@ impl MathModule {
     /// * `building_length_a` - Length of windward face (m)
     /// * `building_width_b` - Width perpendicular to wind (m)
     /// * `building_height` - Total height of building (m)
-    /// * `num_floors` - Number of floors
+    /// * `num_floors` - Number of floors (integer)
     /// * `wind_force_height` - Height where wind force acts (m)
     /// * `safety_factor` - Required safety factor (default 3.0)
     /// 
@@ -258,7 +280,7 @@ impl MathModule {
         building_length_a: f64,
         building_width_b: f64,
         building_height: f64,
-        num_floors: f64,
+        num_floors: u32,
         wind_force_height: f64,
         safety_factor: f64,
     ) -> Result<f64, String> {
@@ -269,8 +291,8 @@ impl MathModule {
         if building_length_a <= 0.0 || building_width_b <= 0.0 || building_height <= 0.0 {
             return Err("Building dimensions must be positive".to_string());
         }
-        if num_floors <= 0.0 {
-            return Err("Number of floors must be positive".to_string());
+        if num_floors == 0 {
+            return Err("Number of floors must be at least 1".to_string());
         }
         if wind_force_height <= 0.0 || wind_force_height > building_height {
             return Err("Wind force height must be positive and not exceed building height".to_string());
@@ -337,7 +359,7 @@ impl MathModule {
         }
         
         // Calculate building area
-        let building_area = building_length_a * building_width_b * num_floors;
+        let building_area = building_length_a * building_width_b * num_floors as f64;
         
         // Check for division by zero
         if building_area == 0.0 {

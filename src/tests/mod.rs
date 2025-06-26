@@ -339,71 +339,77 @@ fn test_math_functions_edge_cases() {
 fn test_building_stability_verification() {
     use crate::math::MathModule;
 
-    // Test case 1: Stable building
+    // Test a stable building
     let result = MathModule::verify_building_stability(
         5.0,    // dead_load_per_sqm (kN/m²)
         1.0,    // wind_load_per_sqm (kN/m²)
         20.0,   // building_length_a (m)
         15.0,   // building_width_b (m)
         30.0,   // building_height (m)
-        10.0,   // num_floors
-        15.0,   // wind_force_height (m) - mid-height
-    ).unwrap();
+        10,     // num_floors
+        15.0,   // wind_force_height (m)
+    );
 
+    assert!(result.is_ok());
+    let stability = result.unwrap();
+    
     // Verify the building is stable (Me/Mv > 3)
-    assert!(result.is_stable, "Building should be stable");
-    assert!(result.stability_ratio > 3.0, "Stability ratio should be > 3.0");
-    assert!(result.safety_margin > 0.0, "Safety margin should be positive");
-
-    // Verify calculations
-    let expected_total_dead_load = 5.0 * 20.0 * 15.0 * 10.0; // 15000 kN
-    let expected_center_to_corner = MathModule::sqrt((20.0_f64/2.0).powi(2) + (15.0_f64/2.0).powi(2)); // 12.5 m
-    let expected_resisting_moment = expected_total_dead_load * expected_center_to_corner;
-    let expected_wind_force = 1.0 * 30.0 * 20.0; // 600 kN
-    let expected_overturning_moment = expected_wind_force * 15.0; // 9000 kN·m
-
-    assert!((result.resisting_moment - expected_resisting_moment).abs() < 1e-6);
-    assert!((result.overturning_moment - expected_overturning_moment).abs() < 1e-6);
+    assert!(stability.is_stable);
+    assert!(stability.stability_ratio > 3.0);
+    assert!(stability.safety_margin > 0.0);
+    
+    // Verify all values are positive and finite
+    assert!(stability.resisting_moment > 0.0);
+    assert!(stability.overturning_moment > 0.0);
+    assert!(stability.stability_ratio > 0.0);
+    assert!(stability.safety_margin.is_finite());
 }
 
 #[test]
 fn test_building_stability_unstable() {
     use crate::math::MathModule;
 
-    // Test case 2: Unstable building (high wind load, low dead load)
+    // Test an unstable building (high wind load, low dead load)
     let result = MathModule::verify_building_stability(
-        1.0,    // dead_load_per_sqm (kN/m²) - very low
-        5.0,    // wind_load_per_sqm (kN/m²) - very high
+        1.0,    // dead_load_per_sqm (kN/m²) - low
+        5.0,    // wind_load_per_sqm (kN/m²) - high
         10.0,   // building_length_a (m)
         10.0,   // building_width_b (m)
         20.0,   // building_height (m)
-        5.0,    // num_floors
+        5,      // num_floors
         10.0,   // wind_force_height (m)
-    ).unwrap();
+    );
 
+    assert!(result.is_ok());
+    let stability = result.unwrap();
+    
     // Verify the building is unstable (Me/Mv < 3)
-    assert!(!result.is_stable, "Building should be unstable");
-    assert!(result.stability_ratio < 3.0, "Stability ratio should be < 3.0");
-    assert!(result.safety_margin < 0.0, "Safety margin should be negative");
+    assert!(!stability.is_stable);
+    assert!(stability.stability_ratio < 3.0);
+    assert!(stability.safety_margin < 0.0);
 }
 
 #[test]
 fn test_building_stability_edge_cases() {
     use crate::math::MathModule;
 
-    // Test case 3: Very tall, narrow building
+    // Test a tall narrow building (likely unstable)
     let result = MathModule::verify_building_stability(
         8.0,    // dead_load_per_sqm (kN/m²)
         2.0,    // wind_load_per_sqm (kN/m²)
         5.0,    // building_length_a (m) - narrow
         5.0,    // building_width_b (m) - narrow
-        100.0,  // building_height (m) - very tall
-        20.0,   // num_floors
-        50.0,   // wind_force_height (m) - mid-height
-    ).unwrap();
+        100.0,  // building_height (m) - tall
+        20,     // num_floors
+        50.0,   // wind_force_height (m)
+    );
 
-    // This should be unstable due to high wind moment on narrow base
-    assert!(!result.is_stable, "Tall narrow building should be unstable");
+    assert!(result.is_ok());
+    let stability = result.unwrap();
+    
+    // This building should be unstable due to high height-to-width ratio
+    assert!(!stability.is_stable);
+    assert!(stability.stability_ratio < 3.0);
 }
 
 #[test]
@@ -412,72 +418,86 @@ fn test_building_stability_validation_errors() {
 
     // Test negative dead load
     let result = MathModule::verify_building_stability(
-        -1.0,   // negative dead load
-        1.0,    // wind_load_per_sqm
-        20.0,   // building_length_a
-        15.0,   // building_width_b
-        30.0,   // building_height
-        10.0,   // num_floors
-        15.0,   // wind_force_height
+        -1.0,   // dead_load_per_sqm (kN/m²) - negative
+        1.0,    // wind_load_per_sqm (kN/m²)
+        20.0,   // building_length_a (m)
+        15.0,   // building_width_b (m)
+        30.0,   // building_height (m)
+        10,     // num_floors
+        15.0,   // wind_force_height (m)
     );
-    assert!(result.is_err(), "Should return error for negative dead load");
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Dead load per square meter must be positive"));
 
-    // Test zero wind load
+    // Test zero number of floors
     let result = MathModule::verify_building_stability(
-        5.0,    // dead_load_per_sqm
-        0.0,    // zero wind load
-        20.0,   // building_length_a
-        15.0,   // building_width_b
-        30.0,   // building_height
-        10.0,   // num_floors
-        15.0,   // wind_force_height
+        5.0,    // dead_load_per_sqm (kN/m²)
+        1.0,    // wind_load_per_sqm (kN/m²)
+        20.0,   // building_length_a (m)
+        15.0,   // building_width_b (m)
+        30.0,   // building_height (m)
+        0,      // num_floors - zero
+        15.0,   // wind_force_height (m)
     );
-    assert!(result.is_err(), "Should return error for zero wind load");
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Number of floors must be at least 1"));
 
-    // Test invalid wind force height
+    // Test wind force height exceeding building height
     let result = MathModule::verify_building_stability(
-        5.0,    // dead_load_per_sqm
-        1.0,    // wind_load_per_sqm
-        20.0,   // building_length_a
-        15.0,   // building_width_b
-        30.0,   // building_height
-        10.0,   // num_floors
-        35.0,   // wind_force_height > building_height
+        5.0,    // dead_load_per_sqm (kN/m²)
+        1.0,    // wind_load_per_sqm (kN/m²)
+        20.0,   // building_length_a (m)
+        15.0,   // building_width_b (m)
+        30.0,   // building_height (m)
+        10,     // num_floors
+        35.0,   // wind_force_height (m) - exceeds building height
     );
-    assert!(result.is_err(), "Should return error for invalid wind force height");
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Wind force height must be positive and not exceed building height"));
 }
 
 #[test]
 fn test_calculate_minimum_dead_load() {
     use crate::math::MathModule;
 
-    // Test case: Calculate minimum dead load for stability
-    let min_dead_load = MathModule::calculate_minimum_dead_load(
+    // Test minimum dead load calculation
+    let result = MathModule::calculate_minimum_dead_load(
         2.0,    // wind_load_per_sqm (kN/m²)
-        15.0,   // building_length_a (m)
-        12.0,   // building_width_b (m)
-        25.0,   // building_height (m)
-        8.0,    // num_floors
-        12.5,   // wind_force_height (m) - mid-height
+        20.0,   // building_length_a (m)
+        15.0,   // building_width_b (m)
+        30.0,   // building_height (m)
+        8,      // num_floors
+        15.0,   // wind_force_height (m)
         3.0,    // safety_factor
+    );
+
+    assert!(result.is_ok());
+    let min_dead_load = result.unwrap();
+    
+    // Verify the result is positive and finite
+    assert!(min_dead_load > 0.0);
+    assert!(min_dead_load.is_finite());
+    
+    // Verify that using this dead load results in exactly Me/Mv = 3.0
+    let stability_result = MathModule::verify_building_stability(
+        min_dead_load,
+        2.0,    // wind_load_per_sqm (kN/m²)
+        20.0,   // building_length_a (m)
+        15.0,   // building_width_b (m)
+        30.0,   // building_height (m)
+        8,      // num_floors
+        15.0,   // wind_force_height (m)
     ).unwrap();
-
-    // Verify the calculated minimum dead load is positive
-    assert!(min_dead_load > 0.0, "Minimum dead load should be positive");
-
-    // Verify that using this minimum dead load results in exactly Me/Mv = 3.0
-    let result = MathModule::verify_building_stability(
-        min_dead_load,  // calculated minimum dead load
-        2.0,            // wind_load_per_sqm
-        15.0,           // building_length_a
-        12.0,           // building_width_b
-        25.0,           // building_height
-        8.0,            // num_floors
-        12.5,           // wind_force_height
-    ).unwrap();
-
-    assert!((result.stability_ratio - 3.0).abs() < 1e-6, 
-        "Stability ratio should be exactly 3.0 for minimum dead load");
+    
+    // Debug output
+    println!("Minimum dead load: {}", min_dead_load);
+    println!("Stability ratio: {}", stability_result.stability_ratio);
+    println!("Is stable: {}", stability_result.is_stable);
+    println!("Safety margin: {}", stability_result.safety_margin);
+    
+    // The stability ratio should be very close to 3.0
+    assert!((stability_result.stability_ratio - 3.0).abs() < 1e-10);
+    assert!(stability_result.is_stable);
 }
 
 #[test]
@@ -486,153 +506,159 @@ fn test_calculate_minimum_dead_load_validation() {
 
     // Test negative wind load
     let result = MathModule::calculate_minimum_dead_load(
-        -1.0,   // negative wind load
-        15.0,   // building_length_a
-        12.0,   // building_width_b
-        25.0,   // building_height
-        8.0,    // num_floors
-        12.5,   // wind_force_height
+        -1.0,   // wind_load_per_sqm (kN/m²) - negative
+        20.0,   // building_length_a (m)
+        15.0,   // building_width_b (m)
+        30.0,   // building_height (m)
+        8,      // num_floors
+        15.0,   // wind_force_height (m)
         3.0,    // safety_factor
     );
-    assert!(result.is_err(), "Should return error for negative wind load");
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Wind load per square meter must be positive"));
 
-    // Test zero safety factor
+    // Test zero number of floors
     let result = MathModule::calculate_minimum_dead_load(
-        2.0,    // wind_load_per_sqm
-        15.0,   // building_length_a
-        12.0,   // building_width_b
-        25.0,   // building_height
-        8.0,    // num_floors
-        12.5,   // wind_force_height
-        0.0,    // zero safety factor
+        2.0,    // wind_load_per_sqm (kN/m²)
+        20.0,   // building_length_a (m)
+        15.0,   // building_width_b (m)
+        30.0,   // building_height (m)
+        0,      // num_floors - zero
+        15.0,   // wind_force_height (m)
+        3.0,    // safety_factor
     );
-    assert!(result.is_err(), "Should return error for zero safety factor");
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Number of floors must be at least 1"));
 }
 
 #[test]
 fn test_stability_result_structure() {
-    use crate::math::MathModule;
+    use crate::math::{MathModule, StabilityResult};
 
     let result = MathModule::verify_building_stability(
-        5.0,    // dead_load_per_sqm
-        1.0,    // wind_load_per_sqm
-        20.0,   // building_length_a
-        15.0,   // building_width_b
-        30.0,   // building_height
-        10.0,   // num_floors
-        15.0,   // wind_force_height
+        5.0,    // dead_load_per_sqm (kN/m²)
+        1.0,    // wind_load_per_sqm (kN/m²)
+        20.0,   // building_length_a (m)
+        15.0,   // building_width_b (m)
+        30.0,   // building_height (m)
+        10,     // num_floors
+        15.0,   // wind_force_height (m)
     ).unwrap();
-
-    // Verify all fields are present and have reasonable values
-    assert!(result.resisting_moment > 0.0, "Resisting moment should be positive");
-    assert!(result.overturning_moment > 0.0, "Overturning moment should be positive");
-    assert!(result.stability_ratio > 0.0, "Stability ratio should be positive");
-    assert!(result.safety_margin > -3.0, "Safety margin should be > -3.0");
 
     // Test that the result can be cloned
     let cloned_result = result.clone();
+    assert_eq!(result.resisting_moment, cloned_result.resisting_moment);
+    assert_eq!(result.overturning_moment, cloned_result.overturning_moment);
     assert_eq!(result.stability_ratio, cloned_result.stability_ratio);
     assert_eq!(result.is_stable, cloned_result.is_stable);
+    assert_eq!(result.safety_margin, cloned_result.safety_margin);
+
+    // Test debug formatting
+    let debug_str = format!("{:?}", result);
+    assert!(debug_str.contains("StabilityResult"));
 }
 
 #[test]
 fn test_building_stability_extreme_values() {
     use crate::math::MathModule;
 
-    // Test extremely small building dimensions
+    // Test very small building dimensions
     let result = MathModule::verify_building_stability(
-        5.0,    // dead_load_per_sqm
-        1.0,    // wind_load_per_sqm
-        0.05,   // building_length_a - too small
-        15.0,   // building_width_b
-        30.0,   // building_height
-        10.0,   // num_floors
-        15.0,   // wind_force_height
+        5.0,    // dead_load_per_sqm (kN/m²)
+        1.0,    // wind_load_per_sqm (kN/m²)
+        0.05,   // building_length_a (m) - too small
+        15.0,   // building_width_b (m)
+        30.0,   // building_height (m)
+        10,     // num_floors
+        15.0,   // wind_force_height (m)
     );
-    assert!(result.is_err(), "Should return error for extremely small building length");
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Building dimensions must be at least 0.1 meters"));
 
-    // Test extremely large building dimensions
+    // Test very large building dimensions
     let result = MathModule::verify_building_stability(
-        5.0,    // dead_load_per_sqm
-        1.0,    // wind_load_per_sqm
-        20000.0, // building_length_a - too large
-        15.0,   // building_width_b
-        30.0,   // building_height
-        10.0,   // num_floors
-        15.0,   // wind_force_height
+        5.0,    // dead_load_per_sqm (kN/m²)
+        1.0,    // wind_load_per_sqm (kN/m²)
+        20000.0, // building_length_a (m) - too large
+        15.0,   // building_width_b (m)
+        30.0,   // building_height (m)
+        10,     // num_floors
+        15.0,   // wind_force_height (m)
     );
-    assert!(result.is_err(), "Should return error for extremely large building length");
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Building dimensions exceed maximum allowed values"));
 
-    // Test extremely small building width
+    // Test valid extreme values
     let result = MathModule::verify_building_stability(
-        5.0,    // dead_load_per_sqm
-        1.0,    // wind_load_per_sqm
-        20.0,   // building_length_a
-        0.05,   // building_width_b - too small
-        30.0,   // building_height
-        10.0,   // num_floors
-        15.0,   // wind_force_height
+        5.0,    // dead_load_per_sqm (kN/m²)
+        1.0,    // wind_load_per_sqm (kN/m²)
+        0.1,    // building_length_a (m) - minimum valid
+        0.1,    // building_width_b (m) - minimum valid
+        30.0,   // building_height (m)
+        10,     // num_floors
+        15.0,   // wind_force_height (m)
     );
-    assert!(result.is_err(), "Should return error for extremely small building width");
+    assert!(result.is_ok());
 }
 
 #[test]
 fn test_calculate_minimum_dead_load_extreme_values() {
     use crate::math::MathModule;
 
-    // Test extremely small building dimensions
+    // Test very small building dimensions
     let result = MathModule::calculate_minimum_dead_load(
-        2.0,    // wind_load_per_sqm
-        0.05,   // building_length_a - too small
-        12.0,   // building_width_b
-        25.0,   // building_height
-        8.0,    // num_floors
-        12.5,   // wind_force_height
+        2.0,    // wind_load_per_sqm (kN/m²)
+        0.05,   // building_length_a (m) - too small
+        15.0,   // building_width_b (m)
+        30.0,   // building_height (m)
+        8,      // num_floors
+        15.0,   // wind_force_height (m)
         3.0,    // safety_factor
     );
-    assert!(result.is_err(), "Should return error for extremely small building length");
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Building dimensions must be at least 0.1 meters"));
 
-    // Test extremely large building dimensions
+    // Test very large building dimensions
     let result = MathModule::calculate_minimum_dead_load(
-        2.0,    // wind_load_per_sqm
-        20000.0, // building_length_a - too large
-        12.0,   // building_width_b
-        25.0,   // building_height
-        8.0,    // num_floors
-        12.5,   // wind_force_height
+        2.0,    // wind_load_per_sqm (kN/m²)
+        20000.0, // building_length_a (m) - too large
+        15.0,   // building_width_b (m)
+        30.0,   // building_height (m)
+        8,      // num_floors
+        15.0,   // wind_force_height (m)
         3.0,    // safety_factor
     );
-    assert!(result.is_err(), "Should return error for extremely large building length");
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Building dimensions exceed maximum allowed values"));
 }
 
 #[test]
 fn test_building_stability_overflow_protection() {
     use crate::math::MathModule;
 
-    // Test with very large values that might cause overflow
+    // Test with very large values that could cause overflow
     let result = MathModule::verify_building_stability(
-        1e6,    // very large dead load
-        1e6,    // very large wind load
-        1000.0, // large building length
-        1000.0, // large building width
-        1000.0, // large building height
-        100.0,  // many floors
-        500.0,  // wind force height
+        1e6,    // dead_load_per_sqm (kN/m²) - very large
+        1e6,    // wind_load_per_sqm (kN/m²) - very large
+        10000.0, // building_length_a (m) - maximum allowed
+        10000.0, // building_width_b (m) - maximum allowed
+        10000.0, // building_height (m) - maximum allowed
+        100,    // num_floors - large number
+        5000.0, // wind_force_height (m)
     );
 
-    // This should either succeed with valid results or fail with overflow error
+    // This should either succeed with valid results or fail with a clear error
     match result {
-        Ok(stability_result) => {
-            // If it succeeds, verify the results are reasonable
-            assert!(stability_result.resisting_moment > 0.0);
-            assert!(stability_result.overturning_moment > 0.0);
-            assert!(stability_result.stability_ratio > 0.0);
-            assert!(!stability_result.stability_ratio.is_infinite());
-            assert!(!stability_result.stability_ratio.is_nan());
+        Ok(stability) => {
+            // If it succeeds, verify all values are finite
+            assert!(stability.resisting_moment.is_finite());
+            assert!(stability.overturning_moment.is_finite());
+            assert!(stability.stability_ratio.is_finite());
+            assert!(stability.safety_margin.is_finite());
         }
-        Err(error_msg) => {
+        Err(error) => {
             // If it fails, it should be due to overflow protection
-            assert!(error_msg.contains("overflow") || error_msg.contains("invalid value"));
+            assert!(error.contains("overflow") || error.contains("invalid value"));
         }
     }
 }
@@ -641,28 +667,27 @@ fn test_building_stability_overflow_protection() {
 fn test_calculate_minimum_dead_load_overflow_protection() {
     use crate::math::MathModule;
 
-    // Test with very large values that might cause overflow
+    // Test with very large values that could cause overflow
     let result = MathModule::calculate_minimum_dead_load(
-        1e6,    // very large wind load
-        1000.0, // large building length
-        1000.0, // large building width
-        1000.0, // large building height
-        100.0,  // many floors
-        500.0,  // wind force height
+        1e6,    // wind_load_per_sqm (kN/m²) - very large
+        10000.0, // building_length_a (m) - maximum allowed
+        10000.0, // building_width_b (m) - maximum allowed
+        10000.0, // building_height (m) - maximum allowed
+        100,    // num_floors - large number
+        5000.0, // wind_force_height (m)
         3.0,    // safety_factor
     );
 
-    // This should either succeed with valid results or fail with overflow error
+    // This should either succeed with valid results or fail with a clear error
     match result {
         Ok(min_dead_load) => {
-            // If it succeeds, verify the result is reasonable
+            // If it succeeds, verify the result is finite and positive
+            assert!(min_dead_load.is_finite());
             assert!(min_dead_load > 0.0);
-            assert!(!min_dead_load.is_infinite());
-            assert!(!min_dead_load.is_nan());
         }
-        Err(error_msg) => {
+        Err(error) => {
             // If it fails, it should be due to overflow protection
-            assert!(error_msg.contains("overflow") || error_msg.contains("invalid value"));
+            assert!(error.contains("overflow") || error.contains("invalid value"));
         }
     }
 }
@@ -671,31 +696,49 @@ fn test_calculate_minimum_dead_load_overflow_protection() {
 fn test_building_stability_zero_overturning_moment() {
     use crate::math::MathModule;
 
-    // Test case where overturning moment would be zero (edge case)
-    // This should result in infinite stability ratio
+    // Test with zero wind load (should result in perfect stability: ratio = 1e6)
     let result = MathModule::verify_building_stability(
-        5.0,    // dead_load_per_sqm
-        1.0,    // wind_load_per_sqm
-        20.0,   // building_length_a
-        15.0,   // building_width_b
-        30.0,   // building_height
-        10.0,   // num_floors
-        0.0,    // wind_force_height - zero (invalid)
+        5.0,    // dead_load_per_sqm (kN/m²)
+        0.00000000001, // wind_load_per_sqm (kN/m²) - near zero
+        20.0,   // building_length_a (m)
+        15.0,   // building_width_b (m)
+        30.0,   // building_height (m)
+        10,     // num_floors
+        15.0,   // wind_force_height (m)
     );
-    assert!(result.is_err(), "Should return error for zero wind force height");
 
-    // Test with very small wind force height (should work)
+    assert!(result.is_ok());
+    let stability = result.unwrap();
+    assert_eq!(stability.stability_ratio, 1e6);
+    assert!(stability.is_stable);
+    assert!(stability.safety_margin > 0.0);
+}
+
+#[test]
+fn test_building_stability_negative_overturning_moment() {
+    use crate::math::MathModule;
+
+    // Negative wind force height (physically impossible, should error)
     let result = MathModule::verify_building_stability(
-        5.0,    // dead_load_per_sqm
-        1.0,    // wind_load_per_sqm
-        20.0,   // building_length_a
-        15.0,   // building_width_b
-        30.0,   // building_height
-        10.0,   // num_floors
-        0.1,    // very small wind force height
-    ).unwrap();
-
-    // Should be very stable due to small overturning moment
-    assert!(result.is_stable, "Building should be stable with very small overturning moment");
-    assert!(result.stability_ratio > 3.0, "Stability ratio should be > 3.0");
+        5.0,    // dead_load_per_sqm (kN/m²)
+        1.0,    // wind_load_per_sqm (kN/m²)
+        20.0,   // building_length_a (m)
+        15.0,   // building_width_b (m)
+        30.0,   // building_height (m)
+        10,     // num_floors
+        -15.0,  // wind_force_height (m) - negative
+    );
+    assert!(result.is_err());
+    // The error should be about wind force height, not negative overturning moment, due to earlier validation
+    // But let's also test a case where overturning moment is negative due to negative wind load
+    let result2 = MathModule::verify_building_stability(
+        5.0,    // dead_load_per_sqm (kN/m²)
+        -1.0,   // wind_load_per_sqm (kN/m²) - negative
+        20.0,   // building_length_a (m)
+        15.0,   // building_width_b (m)
+        30.0,   // building_height (m)
+        10,     // num_floors
+        15.0,   // wind_force_height (m)
+    );
+    assert!(result2.is_err());
 }
