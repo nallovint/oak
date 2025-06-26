@@ -1,0 +1,46 @@
+BEGIN PROJ "building_stability_demo.project"
+    BEGIN SECTION "demo"
+        print "=== Building Stability Verification Demo ==="
+        print ""
+        
+        print "1. Stable Building Example:"
+        print "Building: 20m x 15m x 30m, 10 floors"
+        print "Dead load: 5 kN/m², Wind load: 1 kN/m²"
+        
+        // This would be implemented in the Oak language
+        // For now, we'll show the expected calculations
+        var dead_load := 5.0        // kN/m²
+        var wind_load := 1.0        // kN/m²
+        var length_a := 20.0        // m
+        var width_b := 15.0         // m
+        var height := 30.0          // m
+        var floors := 10.0          // number of floors
+        var wind_height := 15.0     // m (mid-height)
+        
+        print "Expected stability ratio: > 3.0 (STABLE)"
+        print ""
+        
+        print "2. Unstable Building Example:"
+        print "Building: 10m x 10m x 20m, 5 floors"
+        print "Dead load: 1 kN/m², Wind load: 5 kN/m²"
+        print "Expected stability ratio: < 3.0 (UNSTABLE)"
+        print ""
+        
+        print "3. Tall Narrow Building Example:"
+        print "Building: 5m x 5m x 100m, 20 floors"
+        print "Dead load: 8 kN/m², Wind load: 2 kN/m²"
+        print "Expected stability ratio: < 3.0 (UNSTABLE)"
+        print ""
+        
+        print "4. Minimum Dead Load Calculation:"
+        print "For a given wind load, calculate minimum dead load"
+        print "required to achieve Me/Mv = 3.0"
+        print ""
+        
+        print "=== Demo Complete ==="
+        print "Note: This demonstrates the mathematical framework"
+        print "for building stability verification against wind loads"
+        
+        ret "Building stability verification framework ready!"
+    END SECTION "demo"
+END PROJ "building_stability_demo.project" 
