@@ -134,6 +134,28 @@ impl MathModule {
 
     // Helper functions for building stability calculations
 
+    /// Safely convert f64 to u32 with comprehensive validation
+    /// 
+    /// # Arguments
+    /// * `value` - The f64 value to convert
+    /// * `parameter_name` - Name of the parameter for error messages
+    /// 
+    /// # Returns
+    /// * `Ok(u32)` if conversion is safe
+    /// * `Err(String)` with descriptive error message if conversion is unsafe
+    fn safe_f64_to_u32(value: f64, parameter_name: &str) -> Result<u32, String> {
+        if value.is_nan() || value.is_infinite() {
+            return Err(format!("{} cannot be NaN or infinite", parameter_name));
+        }
+        if value < 0.0 {
+            return Err(format!("{} cannot be negative", parameter_name));
+        }
+        if value > u32::MAX as f64 {
+            return Err(format!("{} exceeds maximum allowed value", parameter_name));
+        }
+        Ok(value as u32)
+    }
+
     /// Validate building dimension parameters
     /// 
     /// # Arguments
@@ -428,29 +450,16 @@ impl MathModule {
     /// assert!(result.unwrap().is_compliant); // 15/20 = 0.75 > 0.2
     /// ```
     pub fn check_wind_stiffness_compliance(length_a: f64, width_b: f64) -> Result<WindStiffnessResult, String> {
-        // Validate input parameters
-        if length_a <= 0.0 {
-            return Err("Building length must be positive".to_string());
-        }
-        if width_b <= 0.0 {
-            return Err("Building width must be positive".to_string());
-        }
-
-        // Identify longer and shorter sides
+        // Use existing calculate_slenderness_ratio function for validation and calculation
+        let slenderness_ratio = MathModule::calculate_slenderness_ratio(length_a, width_b)?;
+        
+        // Identify longer and shorter sides for the result
         let (a, b) = if length_a >= width_b {
             (length_a, width_b)
         } else {
             (width_b, length_a)
         };
-
-        // Calculate slenderness ratio
-        let slenderness_ratio = b / a;
         
-        // Check for division by zero
-        if a == 0.0 {
-            return Err("Building length cannot be zero".to_string());
-        }
-
         // Check compliance criterion (b/a > 1/5)
         let is_compliant = slenderness_ratio > 0.2; // 1/5 = 0.2
 
@@ -515,9 +524,12 @@ impl MathModule {
                     return Err("Stability calculation requires exactly 7 parameters: [dead_load, wind_load, length, width, height, floors, wind_height]".to_string());
                 }
                 
+                // Validate floors parameter for safe f64 to u32 conversion
+                let num_floors = MathModule::safe_f64_to_u32(params[5], "Number of floors")?;
+                
                 let result = MathModule::verify_building_stability(
                     params[0], params[1], params[2], params[3], params[4], 
-                    params[5] as u32, params[6]
+                    num_floors, params[6]
                 )?;
                 
                 let message = if result.is_stable {
@@ -545,9 +557,12 @@ impl MathModule {
                     return Err("Minimum dead load calculation requires exactly 7 parameters: [wind_load, length, width, height, floors, wind_height, safety_factor]".to_string());
                 }
                 
+                // Validate floors parameter for safe f64 to u32 conversion
+                let num_floors = MathModule::safe_f64_to_u32(params[4], "Number of floors")?;
+                
                 let result = MathModule::calculate_minimum_dead_load(
                     params[0], params[1], params[2], params[3], 
-                    params[4] as u32, params[5], params[6]
+                    num_floors, params[5], params[6]
                 )?;
                 
                 let message = format!("Minimum required dead load: {:.3} kN/m²", result);
@@ -566,13 +581,16 @@ impl MathModule {
                     return Err("Slenderness ratio calculation requires exactly 2 parameters: [length, width]".to_string());
                 }
                 
+                // Use existing calculate_slenderness_ratio function for validation and calculation
+                let ratio = MathModule::calculate_slenderness_ratio(params[0], params[1])?;
+                
+                // Identify longer and shorter sides for the details
                 let (a, b) = if params[0] >= params[1] {
                     (params[0], params[1])
                 } else {
                     (params[1], params[0])
                 };
                 
-                let ratio = b / a;
                 let message = format!("Slenderness ratio: {:.3} (b/a)", ratio);
                 
                 Ok(ArchitecturalResult {
@@ -621,14 +639,14 @@ impl MathModule {
             (width_b, length_a)
         };
 
-        // Calculate slenderness ratio
-        let slenderness_ratio = b / a;
-        
-        // Check for division by zero
+        // Check for division by zero before calculation
         if a == 0.0 {
             return Err("Building length cannot be zero".to_string());
         }
 
+        // Calculate slenderness ratio
+        let slenderness_ratio = b / a;
+        
         // Validate result
         MathModule::validate_calculation_result(slenderness_ratio, "Slenderness ratio calculation")?;
 

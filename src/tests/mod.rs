@@ -786,3 +786,97 @@ fn test_calc_architecture_command() {
     let out = calc_architecture_command("unknown_type", vec![1.0, 2.0]);
     assert!(out.contains("Unknown calculation type"));
 }
+
+#[test]
+fn test_calc_architecture_division_by_zero_protection() {
+    use crate::math::calc_architecture_command;
+    
+    // Test calc_architecture slenderness_ratio with zero length
+    let result = calc_architecture_command("slenderness_ratio", vec![0.0, 15.0]);
+    assert!(result.contains("Error"));
+    assert!(result.contains("Building length must be positive"));
+    
+    // Test calc_architecture slenderness_ratio with zero width
+    let result = calc_architecture_command("slenderness_ratio", vec![20.0, 0.0]);
+    assert!(result.contains("Error"));
+    assert!(result.contains("Building width must be positive"));
+}
+
+#[test]
+fn test_division_by_zero_protection() {
+    use crate::math::MathModule;
+    
+    // Test wind stiffness compliance with zero length
+    let result = MathModule::check_wind_stiffness_compliance(0.0, 15.0);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Building length must be positive"));
+    
+    // Test wind stiffness compliance with zero width
+    let result = MathModule::check_wind_stiffness_compliance(20.0, 0.0);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Building width must be positive"));
+    
+    // Test slenderness ratio with zero length
+    let result = MathModule::calculate_slenderness_ratio(0.0, 15.0);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Building length must be positive"));
+    
+    // Test slenderness ratio with zero width
+    let result = MathModule::calculate_slenderness_ratio(20.0, 0.0);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Building width must be positive"));
+}
+
+#[test]
+fn test_safe_f64_to_u32_conversion() {
+    use crate::math::calc_architecture_command;
+    
+    // Test stability calculation with NaN floors
+    let result = calc_architecture_command("stability", vec![5.0, 1.0, 20.0, 15.0, 30.0, f64::NAN, 15.0]);
+    assert!(result.contains("Error"));
+    assert!(result.contains("Number of floors cannot be NaN or infinite"));
+    
+    // Test stability calculation with infinite floors
+    let result = calc_architecture_command("stability", vec![5.0, 1.0, 20.0, 15.0, 30.0, f64::INFINITY, 15.0]);
+    assert!(result.contains("Error"));
+    assert!(result.contains("Number of floors cannot be NaN or infinite"));
+    
+    // Test stability calculation with negative floors
+    let result = calc_architecture_command("stability", vec![5.0, 1.0, 20.0, 15.0, 30.0, -5.0, 15.0]);
+    assert!(result.contains("Error"));
+    assert!(result.contains("Number of floors cannot be negative"));
+    
+    // Test stability calculation with floors exceeding u32::MAX
+    let result = calc_architecture_command("stability", vec![5.0, 1.0, 20.0, 15.0, 30.0, (u32::MAX as f64) + 1.0, 15.0]);
+    assert!(result.contains("Error"));
+    assert!(result.contains("Number of floors exceeds maximum allowed value"));
+    
+    // Test min_dead_load calculation with NaN floors
+    let result = calc_architecture_command("min_dead_load", vec![2.0, 20.0, 15.0, 30.0, f64::NAN, 15.0, 3.0]);
+    assert!(result.contains("Error"));
+    assert!(result.contains("Number of floors cannot be NaN or infinite"));
+    
+    // Test min_dead_load calculation with infinite floors
+    let result = calc_architecture_command("min_dead_load", vec![2.0, 20.0, 15.0, 30.0, f64::INFINITY, 15.0, 3.0]);
+    assert!(result.contains("Error"));
+    assert!(result.contains("Number of floors cannot be NaN or infinite"));
+    
+    // Test min_dead_load calculation with negative floors
+    let result = calc_architecture_command("min_dead_load", vec![2.0, 20.0, 15.0, 30.0, -5.0, 15.0, 3.0]);
+    assert!(result.contains("Error"));
+    assert!(result.contains("Number of floors cannot be negative"));
+    
+    // Test min_dead_load calculation with floors exceeding u32::MAX
+    let result = calc_architecture_command("min_dead_load", vec![2.0, 20.0, 15.0, 30.0, (u32::MAX as f64) + 1.0, 15.0, 3.0]);
+    assert!(result.contains("Error"));
+    assert!(result.contains("Number of floors exceeds maximum allowed value"));
+    
+    // Test valid conversions (should succeed)
+    let result = calc_architecture_command("stability", vec![5.0, 1.0, 20.0, 15.0, 30.0, 10.0, 15.0]);
+    assert!(!result.contains("Error"));
+    assert!(result.contains("stable") || result.contains("unstable"));
+    
+    let result = calc_architecture_command("min_dead_load", vec![2.0, 20.0, 15.0, 30.0, 8.0, 15.0, 3.0]);
+    assert!(!result.contains("Error"));
+    assert!(result.contains("Minimum required dead load"));
+}
