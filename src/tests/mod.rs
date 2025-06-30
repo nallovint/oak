@@ -742,3 +742,47 @@ fn test_building_stability_negative_overturning_moment() {
     );
     assert!(result2.is_err());
 }
+
+#[test]
+fn test_wind_stiffness_compliance() {
+    use crate::math::MathModule;
+    // Compliant case: 20x15 (b/a = 0.75 > 0.2)
+    let result = MathModule::check_wind_stiffness_compliance(20.0, 15.0).unwrap();
+    assert!(result.is_compliant);
+    assert!((result.slenderness_ratio - 0.75).abs() < 1e-10);
+    assert!(result.warning_message.is_none());
+
+    // Non-compliant case: 20x3 (b/a = 0.15 < 0.2)
+    let result = MathModule::check_wind_stiffness_compliance(20.0, 3.0).unwrap();
+    assert!(!result.is_compliant);
+    assert!((result.slenderness_ratio - 0.15).abs() < 1e-10);
+    assert!(result.warning_message.is_some());
+}
+
+#[test]
+fn test_calc_architecture_command() {
+    use crate::math::calc_architecture_command;
+    // Wind stiffness compliant
+    let out = calc_architecture_command("wind_stiffness", vec![20.0, 15.0]);
+    assert!(out.contains("compliant"));
+    assert!(out.contains("0.750"));
+    // Wind stiffness non-compliant
+    let out = calc_architecture_command("wind_stiffness", vec![20.0, 3.0]);
+    assert!(out.contains("non-compliant"));
+    assert!(out.contains("0.150"));
+    // Slenderness ratio
+    let out = calc_architecture_command("slenderness_ratio", vec![20.0, 15.0]);
+    assert!(out.contains("Slenderness ratio: 0.750"));
+    // Stability (should be stable)
+    let out = calc_architecture_command("stability", vec![5.0, 1.0, 20.0, 15.0, 30.0, 10.0, 15.0]);
+    assert!(out.contains("stable"));
+    // Minimum dead load
+    let out = calc_architecture_command("min_dead_load", vec![2.0, 20.0, 15.0, 30.0, 8.0, 15.0, 3.0]);
+    assert!(out.contains("Minimum required dead load"));
+    // Error: wrong params
+    let out = calc_architecture_command("wind_stiffness", vec![20.0]);
+    assert!(out.contains("Error"));
+    // Error: unknown type
+    let out = calc_architecture_command("unknown_type", vec![1.0, 2.0]);
+    assert!(out.contains("Unknown calculation type"));
+}
