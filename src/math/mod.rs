@@ -144,14 +144,8 @@ impl MathModule {
     /// * `Ok(u32)` if conversion is safe
     /// * `Err(String)` with descriptive error message if conversion is unsafe
     fn safe_f64_to_u32(value: f64, parameter_name: &str) -> Result<u32, String> {
-        if value.is_nan() || value.is_infinite() {
-            return Err(format!("{} cannot be NaN or infinite", parameter_name));
-        }
-        if value < 0.0 {
-            return Err(format!("{} cannot be negative", parameter_name));
-        }
-        if value > u32::MAX as f64 {
-            return Err(format!("{} exceeds maximum allowed value", parameter_name));
+        if value.is_nan() || value.is_infinite() || value < 0.0 || value > u32::MAX as f64 {
+            return Err(format!("{} cannot be NaN, infinite, negative or exceeds maximum value", parameter_name));
         }
         Ok(value as u32)
     }
